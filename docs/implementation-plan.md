@@ -94,22 +94,31 @@
 
 ---
 
-## Phase 4: MyScheme Integration & Sync
+## Phase 4: MyScheme Integration & Sync (COMPLETED)
 **Goal**: Fetch, normalize, store government schemes
 
 ### Backend
-- [ ] MySchemeClient (WebClient) with API key from env
-- [ ] Scheme entities: Scheme, SchemeEligibility, SchemeDocuments, SchemeFAQs, SchemeApplicationProcess, SchemeCategory, SchemeTags, SchemeState
-- [ ] Raw JSON storage (scheme_raw_data table)
-- [ ] SyncService: paginated fetch → detail fetch → FAQs → documents → normalize → store
-- [ ] Admin endpoint: POST /api/admin/schemes/sync
-- [ ] Sync job tracking (sync_jobs, sync_errors tables)
-- [ ] Retry logic, 429/5xx handling, controlled concurrency
-- [ ] Development limit: maxSchemes config
+- [x] MySchemeClient (RestClient) with API key from env (`x-api-key`, never leaves backend)
+- [x] Scheme entities: Scheme, SchemeRawData, SchemeTag, SchemeState, SchemeFaq, SchemeDocument, SchemeApplicationStep
+- [x] Raw JSON storage (scheme_raw_data table, verbatim payloads)
+- [x] SyncService: paginated fetch → detail fetch → FAQs → documents → normalize → store
+- [x] Admin endpoint: POST /api/admin/schemes/sync (+ job/error inspection)
+- [x] Sync job tracking (sync_jobs, sync_errors tables)
+- [x] Retry logic (429/5xx/transport, exponential backoff), controlled concurrency (bounded pool)
+- [x] Development limit: maxSchemes config (default 50, admin-overridable but capped)
 
 ### Frontend
-- [ ] Admin sync trigger button
-- [ ] Sync status display
+- [x] Admin sync trigger button
+- [x] Sync status display (job history with outcome counts)
+
+**Decisions**:
+- Live API returns 403 without a valid key and the local key is a placeholder,
+  so the pipeline builds against the documented response shape with a stub client
+  for keyless demo/tests (selected automatically when `MYSCHEME_API_KEY` is blank).
+- Normalization is best-effort and never invents: unknown/missing fields stay null;
+  raw JSON is always preserved. Search/detail parsers tolerate envelope variants.
+- Upserts are idempotent by slug (reruns count as updates); resume = rerun from offset.
+- Tests pin the stub client so shell env can never flip tests onto the live API.
 
 ---
 
@@ -303,6 +312,7 @@
 | 1 - Foundation | ✅ Complete |
 | 2 - Auth | ✅ Complete |
 | 3 - Profile | ✅ Complete |
+| 4 - MyScheme Sync | ✅ Complete |
 | 3 - Profile | ⬜ Pending |
 | 4 - MyScheme Sync | ⬜ Pending |
 | 5 - Scheme Browse | ⬜ Pending |

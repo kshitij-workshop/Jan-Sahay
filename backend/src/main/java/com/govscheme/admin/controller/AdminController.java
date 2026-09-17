@@ -1,10 +1,23 @@
 package com.govscheme.admin.controller;
 
+import com.govscheme.admin.dto.SyncErrorResponse;
+import com.govscheme.admin.dto.SyncJobResponse;
 import com.govscheme.common.dto.ApiResponse;
+import com.govscheme.common.dto.PageResponse;
+import com.govscheme.scheme.entity.SyncErrorRepository;
+import com.govscheme.scheme.entity.SyncJob;
+import com.govscheme.scheme.entity.SyncJobRepository;
+import com.govscheme.scheme.sync.SchemeSyncService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
@@ -19,6 +32,18 @@ import java.util.Map;
 @RequestMapping("/api/admin")
 public class AdminController {
 
+    private final SchemeSyncService syncService;
+    private final SyncJobRepository jobRepository;
+    private final SyncErrorRepository errorRepository;
+
+    public AdminController(SchemeSyncService syncService,
+                           SyncJobRepository jobRepository,
+                           SyncErrorRepository errorRepository) {
+        this.syncService = syncService;
+        this.jobRepository = jobRepository;
+        this.errorRepository = errorRepository;
+    }
+
     @GetMapping("/ping")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> ping() {
@@ -27,5 +52,38 @@ public class AdminController {
             "timestamp", Instant.now().toString()
         );
         return ResponseEntity.ok(ApiResponse.success(data, "Admin access confirmed"));
+    }
+
+    @PostMapping("/schemes/sync")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<SyncJobResponse>> syncSchemes(
+            @RequestParam(defaultValue = "en") String lang,
+            @RequestParam(defaultValue = "0") int from,
+            @RequestParam(required = false) Integer limit) {
+        SyncJob job = syncService.runSync(lang, from, limit);
+        return ResponseEntity.ok(ApiResponse.success(SyncJobResponse.from(job), "Sync finished"));
+    }
+
+    @GetMapping("/sync/jobs")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<PageResponse<SyncJobResponse>>> syncJobs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(Math.max(0, page), Math.min(100, Math.max(1, size)),
+            Sort.by(Sort.Direction.DESC, "startedAt"));
+        Page<SyncJob> jobs = jobRepository.findAll(pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(jobs, SyncJobResponse::from)));
+    }
+
+    @GetMapping("/sync/errors")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<PageResponse<SyncErrorResponse>>> syncErrors(
+            @RequestParam String jobId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(Math.max(0, page), Math.min(100, Math.max(1, size)),
+            Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<com.govscheme.scheme.entity.SyncError> errors = errorRepository.findByJobId(jobId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(errors, SyncErrorResponse::from)));
     }
 }
