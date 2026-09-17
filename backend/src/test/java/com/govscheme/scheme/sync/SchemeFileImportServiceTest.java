@@ -13,8 +13,6 @@ import com.govscheme.scheme.entity.SyncErrorRepository;
 import com.govscheme.scheme.entity.SyncJob;
 import com.govscheme.scheme.entity.SyncJobRepository;
 import com.govscheme.scheme.entity.SchemeApplicationStepRepository;
-import com.govscheme.scheme.entity.SchemeDocumentRepository;
-import com.govscheme.scheme.entity.SchemeFaqRepository;
 import com.govscheme.scheme.entity.SchemeStateRepository;
 import com.govscheme.scheme.entity.SchemeTagRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,7 +76,6 @@ class SchemeFileImportServiceTest {
 
     @Autowired
     private SchemeApplicationStepRepository stepRepository;
-
     @TempDir
     private Path tempDir;
 
