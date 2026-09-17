@@ -8,53 +8,64 @@
 
 ---
 
-## Phase 1: Project Foundation
+## Phase 1: Project Foundation (COMPLETED)
 **Goal**: Spring Boot + React + MySQL + Docker Compose running locally
 
 ### Backend Setup
-- [ ] Spring Boot 3.x project with Maven
-- [ ] Dependencies: Spring Web, Spring Data JPA, Spring Security, Spring AI, MySQL Driver, Flyway, JWT (jjwt), Validation
-- [ ] Application.yml with profiles (dev, prod, test)
-- [ ] Health endpoint (/actuator/health)
-- [ ] Global exception handler
-- [ ] Docker Compose with MySQL
+- [x] Spring Boot 3.x project with Maven
+- [x] Dependencies: Spring Web, Spring Data JPA, Spring Security, Spring AI, MySQL Driver, Flyway, JWT (jjwt), Validation
+- [x] Application.yml with profiles (dev, prod, test)
+- [x] Health endpoint (/api/health + /actuator/health)
+- [x] Global exception handler
+- [x] Docker Compose with MySQL
 
 ### Frontend Setup
-- [ ] React + Vite + TypeScript
-- [ ] React Router, Axios
-- [ ] Basic layout with header, sidebar
-- [ ] Proxy configuration for API calls
+- [x] React + Vite + TypeScript
+- [x] React Router, Axios
+- [x] Basic layout with header, sidebar
+- [x] Proxy configuration for API calls
 
 ### Infrastructure
-- [ ] docker-compose.yml (MySQL, backend, frontend)
-- [ ] .env.example with all placeholders
-- [ ] README.md with setup instructions
-- [ ] Git initialization
+- [x] docker-compose.yml (MySQL, backend, frontend)
+- [x] .env.example with all placeholders
+- [x] README.md with setup instructions
+- [x] Git initialization
 
 **Verification**: `docker-compose up` starts all services, health endpoints respond
 
 ---
 
-## Phase 2: Authentication
+## Phase 2: Authentication (COMPLETED)
 **Goal**: Secure JWT-based auth with USER/ADMIN roles
 
 ### Backend
-- [ ] User entity, UserRepository
-- [ ] AuthController: register, login, refresh
-- [ ] JWT token generation/validation
-- [ ] Spring Security configuration
-- [ ] BCrypt password encoding
-- [ ] Role-based authorization (USER, ADMIN)
+- [x] User entity, UserRepository
+- [x] AuthController: register, login, refresh, verify-email, resend-verification, me
+- [x] JWT token generation/validation with access/refresh type claims
+- [x] Spring Security configuration (explicit `/api` route prefixes, no context-path coupling)
+- [x] BCrypt password encoding
+- [x] Role-based authorization (USER, ADMIN) via URL rules + `@PreAuthorize` (AdminController ping)
+- [x] Email verification flow (token + expiry, non-blocking send, configurable frontend URL)
 
 ### Frontend
-- [ ] Login/Register pages
-- [ ] Auth context + token management
-- [ ] Protected routes
-- [ ] Axios interceptor for JWT
+- [x] Login/Register pages
+- [x] Auth context + token management (incl. `isAdmin`)
+- [x] Protected routes + AdminRoute guard
+- [x] Axios interceptor for JWT (incl. refresh queue)
+- [x] Verify-email page + Admin access-check page
 
 ### Tests
-- [ ] AuthController integration tests
-- [ ] Security config tests
+- [x] AuthController integration tests (11 tests: register/login/refresh/me/verify/resend/RBAC/validation)
+- [x] Security config tests (via admin ping: anonymous→403, USER→403, ADMIN→200)
+
+**Decisions**:
+- Removed `server.servlet.context-path=/api`; controllers carry explicit `/api` prefixes so
+  SecurityConfig matchers behave identically in production and MockMvc tests.
+- Refresh tokens carry `type=refresh` and are rejected by the auth filter and `/me`;
+  access tokens carry `type=access` (+ role claim) and are rejected by `/refresh`.
+- `EmailService` never fails registration (logs warning) so demo mode works without SMTP.
+- Lombok removed from main code paths (annotation processor not configured); explicit
+  constructors/getters/setters are used instead.
 
 ---
 
@@ -280,8 +291,8 @@
 | Phase | Status |
 |-------|--------|
 | 0 - Analysis | ✅ Complete |
-| 1 - Foundation | ⬜ Pending |
-| 2 - Auth | ⬜ Pending |
+| 1 - Foundation | ✅ Complete |
+| 2 - Auth | ✅ Complete |
 | 3 - Profile | ⬜ Pending |
 | 4 - MyScheme Sync | ⬜ Pending |
 | 5 - Scheme Browse | ⬜ Pending |

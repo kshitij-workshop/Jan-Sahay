@@ -32,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @Import(TestMailConfig.class)
 @Transactional
-class AuthControllerIT {
+class AuthControllerTests {
 
     @Autowired
     private MockMvc mockMvc;

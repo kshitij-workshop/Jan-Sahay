@@ -8,6 +8,7 @@ import {
   FileCheck,
   Bell,
   Settings,
+  ShieldCheck,
   LogOut,
   Menu,
   X,
@@ -25,10 +26,15 @@ const navigation = [
   { name: 'Profile', href: '/profile', icon: Settings },
 ];
 
+const adminNavigation = [
+  { name: 'Admin', href: '/admin', icon: ShieldCheck },
+];
+
 export const Sidebar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
+  const items = isAdmin ? [...navigation, ...adminNavigation] : navigation;
 
   return (
     <>
@@ -60,7 +66,7 @@ export const Sidebar: React.FC = () => {
           </div>
 
           <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto" aria-label="Main navigation">
-            {navigation.map((item) => {
+            {items.map((item) => {
               const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
               return (
                 <NavLink

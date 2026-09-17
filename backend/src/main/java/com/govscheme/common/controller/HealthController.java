@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/health")
+@RequestMapping("/api/health")
 public class HealthController {
 
     @GetMapping
