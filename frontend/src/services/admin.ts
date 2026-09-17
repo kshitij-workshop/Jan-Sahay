@@ -47,6 +47,11 @@ export const adminService = {
     return response.data.data;
   },
 
+  async importSchemes(): Promise<SyncJob> {
+    const response = await api.post<{ data: SyncJob }>('/admin/schemes/import');
+    return response.data.data;
+  },
+
   async syncJobs(page = 0, size = 20): Promise<Page<SyncJob>> {
     const response = await api.get<{ data: Page<SyncJob> }>('/admin/sync/jobs', {
       params: { page, size },
