@@ -4,15 +4,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.govscheme.auth.entity.User;
 import com.govscheme.auth.entity.UserRepository;
-import com.govscheme.auth.service.EmailService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,9 +22,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -33,6 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Import(TestMailConfig.class)
 @Transactional
 class AuthControllerIT {
 
@@ -48,8 +46,13 @@ class AuthControllerIT {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @MockBean
-    private EmailService emailService;
+    @Autowired
+    private TestMailConfig.FakeJavaMailSender mailSender;
+
+    @BeforeEach
+    void clearOutbox() {
+        mailSender.clear();
+    }
 
     private String uniqueEmail(String prefix) {
         return prefix + "+" + UUID.randomUUID() + "@example.com";
@@ -107,7 +110,7 @@ class AuthControllerIT {
         assertThat(user.getEmailVerificationToken()).isNotBlank();
         assertThat(user.getEmailVerificationTokenExpiry()).isAfter(Instant.now());
         assertThat(user.getRole()).isEqualTo(User.Role.USER);
-        verify(emailService).sendEmailVerification(eq(email), eq("Test User"), anyString());
+        assertThat(mailSender.sentTo(email)).isTrue();
     }
 
     @Test
@@ -254,7 +257,7 @@ class AuthControllerIT {
                 .content(objectMapper.writeValueAsString(Map.of("email", email))))
             .andExpect(status().isOk());
 
-        verify(emailService).sendEmailVerification(eq(email), eq("Test User"), anyString());
+        assertThat(mailSender.sentTo(email)).isTrue();
     }
 
     @Test
