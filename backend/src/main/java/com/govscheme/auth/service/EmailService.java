@@ -2,34 +2,45 @@ package com.govscheme.auth.service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class EmailService {
 
+    private static final Logger log = LoggerFactory.getLogger(EmailService.class);
+
     private final JavaMailSender mailSender;
+    private final String frontendUrl;
+
+    public EmailService(JavaMailSender mailSender,
+                        @Value("${app.frontend.url:http://localhost:5173}") String frontendUrl) {
+        this.mailSender = mailSender;
+        this.frontendUrl = frontendUrl;
+    }
 
     public void sendEmailVerification(String to, String name, String verificationToken) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            
-            String verificationUrl = "http://localhost:5173/verify-email?token=" + verificationToken;
-            
+
+            String verificationUrl = frontendUrl + "/verify-email?token=" + verificationToken;
+
             helper.setTo(to);
             helper.setSubject("Verify your email - Government Scheme Assistant");
             helper.setText(buildVerificationEmail(name, verificationUrl), true);
-            
+
             mailSender.send(message);
-            log.info("Verification email sent to: {}", to);
+            log.info("EMAIL_VERIFICATION_SENT to={}", to);
         } catch (MessagingException e) {
-            log.error("Failed to send verification email to: {}", to, e);
+            // Do not fail registration when mail is unconfigured (demo mode).
+            log.warn("EMAIL_VERIFICATION_FAILED to={} reason={}", to, e.getMessage());
+        } catch (Exception e) {
+            log.warn("EMAIL_VERIFICATION_FAILED to={} reason={}", to, e.getMessage());
         }
     }
 
@@ -37,17 +48,19 @@ public class EmailService {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            
-            String resetUrl = "http://localhost:5173/reset-password?token=" + resetToken;
-            
+
+            String resetUrl = frontendUrl + "/reset-password?token=" + resetToken;
+
             helper.setTo(to);
             helper.setSubject("Reset your password - Government Scheme Assistant");
             helper.setText(buildPasswordResetEmail(name, resetUrl), true);
-            
+
             mailSender.send(message);
-            log.info("Password reset email sent to: {}", to);
+            log.info("PASSWORD_RESET_SENT to={}", to);
         } catch (MessagingException e) {
-            log.error("Failed to send password reset email to: {}", to, e);
+            log.warn("PASSWORD_RESET_FAILED to={} reason={}", to, e.getMessage());
+        } catch (Exception e) {
+            log.warn("PASSWORD_RESET_FAILED to={} reason={}", to, e.getMessage());
         }
     }
 

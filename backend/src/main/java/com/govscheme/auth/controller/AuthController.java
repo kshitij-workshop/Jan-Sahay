@@ -9,6 +9,8 @@ import com.govscheme.auth.service.AuthService;
 import com.govscheme.common.dto.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -43,9 +45,8 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<AuthResponse.UserInfo>> me(
-            @RequestHeader("Authorization") String authHeader) {
-        String accessToken = extractToken(authHeader);
-        AuthResponse.UserInfo user = authService.getCurrentUser(accessToken).getUserInfo();
+            @AuthenticationPrincipal UserDetails principal) {
+        AuthResponse.UserInfo user = authService.getCurrentUserByUsername(principal.getUsername()).getUserInfo();
         return ResponseEntity.ok(ApiResponse.success(user));
     }
 

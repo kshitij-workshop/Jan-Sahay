@@ -91,7 +91,8 @@ public class AuthService {
     }
 
     public AuthResponse refreshToken(String refreshToken) {
-        if (!jwtService.isTokenValid(refreshToken, loadUserByUsernameFromToken(refreshToken))) {
+        if (!jwtService.isRefreshToken(refreshToken)
+                || !jwtService.isTokenValid(refreshToken, loadUserByUsernameFromToken(refreshToken))) {
             throw new com.govscheme.common.exception.ValidationException("Invalid refresh token", Map.of());
         }
 
@@ -113,6 +114,10 @@ public class AuthService {
 
     public User getCurrentUser(String accessToken) {
         String username = jwtService.extractUsername(accessToken);
+        return getCurrentUserByUsername(username);
+    }
+
+    public User getCurrentUserByUsername(String username) {
         return userRepository.findByEmailOrPhone(username, username)
             .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
     }
@@ -122,11 +127,12 @@ public class AuthService {
         User user = userRepository.findByEmailVerificationToken(token)
             .orElseThrow(() -> new ValidationException("Invalid verification token", Map.of("token", "Invalid or expired token")));
 
-        if (user.getEmailVerificationTokenExpiry().isBefore(Instant.now())) {
+        if (user.getEmailVerificationTokenExpiry() == null
+                || user.getEmailVerificationTokenExpiry().isBefore(Instant.now())) {
             throw new ValidationException("Verification token expired", Map.of("token", "Token has expired"));
         }
 
-        if (user.getEmailVerified()) {
+        if (Boolean.TRUE.equals(user.getEmailVerified())) {
             throw new ValidationException("Email already verified", Map.of("email", "Email is already verified"));
         }
 
@@ -141,7 +147,7 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
             .orElseThrow(() -> new ValidationException("User not found", Map.of("email", "User not found")));
 
-        if (user.getEmailVerified()) {
+        if (Boolean.TRUE.equals(user.getEmailVerified())) {
             throw new ValidationException("Email already verified", Map.of("email", "Email is already verified"));
         }
 

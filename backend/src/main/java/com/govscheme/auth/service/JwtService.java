@@ -32,14 +32,21 @@ public class JwtService {
         this.secretKey = Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
     }
 
+    private static final String CLAIM_TYPE = "type";
+    private static final String TYPE_ACCESS = "access";
+    private static final String TYPE_REFRESH = "refresh";
+
     public String generateAccessToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", userDetails.getAuthorities().iterator().next().getAuthority());
+        claims.put(CLAIM_TYPE, TYPE_ACCESS);
         return buildToken(claims, userDetails.getUsername(), jwtProperties.getAccessTokenExpiryMs());
     }
 
     public String generateRefreshToken(UserDetails userDetails) {
-        return buildToken(new HashMap<>(), userDetails.getUsername(), jwtProperties.getRefreshTokenExpiryMs());
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(CLAIM_TYPE, TYPE_REFRESH);
+        return buildToken(claims, userDetails.getUsername(), jwtProperties.getRefreshTokenExpiryMs());
     }
 
     private String buildToken(Map<String, Object> claims, String subject, long expiryMs) {
@@ -98,6 +105,22 @@ public class JwtService {
 
     public String extractRole(String token) {
         return extractClaim(token, claims -> claims.get("role", String.class));
+    }
+
+    public boolean isAccessToken(String token) {
+        try {
+            return TYPE_ACCESS.equals(extractClaim(token, claims -> claims.get(CLAIM_TYPE, String.class)));
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    public boolean isRefreshToken(String token) {
+        try {
+            return TYPE_REFRESH.equals(extractClaim(token, claims -> claims.get(CLAIM_TYPE, String.class)));
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
     }
 
     public JwtProperties getJwtProperties() {
