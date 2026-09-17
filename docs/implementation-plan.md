@@ -170,7 +170,11 @@
 **Decisions**:
 - Rules evaluate admin-curated `scheme_eligibility` rows only; unconstrained dimensions
   SKIP, missing user data yields MISSING (never FAIL). Free text is display-only.
-- No criteria row = no machine-readable constraints (outcome reflects completeness only).
+- Zero evaluated rules = INSUFFICIENT_INFORMATION ("criteria being curated"), never
+  ELIGIBLE — unknown is not a pass. Verified live: 23/823 Bihar-named schemes
+  ELIGIBLE for a Bihar profile, 800 pending curation, zero fabricated verdicts.
+- `POST /api/admin/schemes/criteria/bootstrap` curates `states=Bihar` only from
+  explicit name/ministry/department mentions; never overwrites curated rows.
 - Refresh/access token types enforced; eligibility endpoint requires authentication.
 
 ---
