@@ -12,6 +12,10 @@ import com.govscheme.scheme.entity.SchemeRepository;
 import com.govscheme.scheme.entity.SyncErrorRepository;
 import com.govscheme.scheme.entity.SyncJob;
 import com.govscheme.scheme.entity.SyncJobRepository;
+import com.govscheme.scheme.entity.SchemeApplicationStepRepository;
+import com.govscheme.scheme.entity.SchemeStateRepository;
+import com.govscheme.scheme.entity.SchemeTagRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,8 +68,32 @@ class SchemeFileImportServiceTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private SchemeTagRepository tagRepository;
+
+    @Autowired
+    private SchemeStateRepository stateRepository;
+
+    @Autowired
+    private SchemeApplicationStepRepository stepRepository;
     @TempDir
     private Path tempDir;
+
+    @BeforeEach
+    void clean() {
+        errorRepository.deleteAll();
+        jobRepository.deleteAll();
+        rawDataRepository.deleteAll();
+        tagRepository.deleteAll();
+        stateRepository.deleteAll();
+        faqRepository.deleteAll();
+        documentRepository.deleteAll();
+        stepRepository.deleteAll();
+        categoryRepository.deleteAll();
+        beneficiaryRepository.deleteAll();
+        referenceRepository.deleteAll();
+        schemeRepository.deleteAll();
+    }
 
     private SchemeFileImportService service(Path file) {
         return new SchemeFileImportService(upsertService, jobRepository, errorRepository,

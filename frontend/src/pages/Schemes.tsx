@@ -1,105 +1,128 @@
-import { useState } from 'react';
-import { Search, Filter, ChevronDown } from 'lucide-react';
-import { Card, CardHeader, CardContent } from '../components/common/Card';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Filter } from 'lucide-react';
+import { Card, CardContent } from '../components/common/Card';
 import { Input } from '../components/common/Input';
 import { Select } from '../components/common/Select';
 import { Button } from '../components/common/Button';
-
-const categories = [
-  { value: '', label: 'All Categories' },
-  { value: 'agriculture', label: 'Agriculture' },
-  { value: 'education', label: 'Education' },
-  { value: 'health', label: 'Health' },
-  { value: 'employment', label: 'Employment' },
-  { value: 'social_welfare', label: 'Social Welfare' },
-  { value: 'women', label: 'Women Empowerment' },
-];
+import { LoadingSpinner } from '../components/common/LoadingSpinner';
+import { schemeService, SchemeSummary } from '../services/schemes';
 
 const states = [
   { value: '', label: 'All States' },
-  { value: 'bihar', label: 'Bihar' },
-  { value: 'up', label: 'Uttar Pradesh' },
-  { value: 'mp', label: 'Madhya Pradesh' },
+  { value: 'Bihar', label: 'Bihar' },
+  { value: 'Uttar Pradesh', label: 'Uttar Pradesh' },
+  { value: 'Jharkhand', label: 'Jharkhand' },
+  { value: 'West Bengal', label: 'West Bengal' },
+  { value: 'Madhya Pradesh', label: 'Madhya Pradesh' },
 ];
 
-const schemes = [
-  {
-    id: '1',
-    name: 'PM Kisan Samman Nidhi',
-    shortTitle: 'PM-KISAN',
-    description: 'Income support of ₹6,000 per year to farmer families',
-    category: 'Agriculture',
-    state: 'All India',
-    benefit: '₹6,000/year',
-    eligibility: 'Small and marginal farmers',
-    status: 'eligible' as const,
-  },
-  {
-    id: '2',
-    name: 'Bihar Student Credit Card Scheme',
-    shortTitle: 'BSCC',
-    description: 'Education loan up to ₹4 lakh for higher education',
-    category: 'Education',
-    state: 'Bihar',
-    benefit: 'Up to ₹4 lakh',
-    eligibility: 'Bihar resident students',
-    status: 'needs_info' as const,
-  },
-  {
-    id: '3',
-    name: 'Mukhyamantri Kanya Utthan Yojana',
-    shortTitle: 'MKUY',
-    description: 'Financial assistance for girl child education',
-    category: 'Women Empowerment',
-    state: 'Bihar',
-    benefit: '₹25,000',
-    eligibility: 'Girl students in Bihar',
-    status: 'eligible' as const,
-  },
-  {
-    id: '4',
-    name: 'Mahatma Gandhi NREGA',
-    shortTitle: 'MGNREGA',
-    description: '100 days guaranteed wage employment',
-    category: 'Employment',
-    state: 'All India',
-    benefit: '₹200-300/day',
-    eligibility: 'Rural households',
-    status: 'not_eligible' as const,
-  },
+const levels = [
+  { value: '', label: 'All Levels' },
+  { value: 'Central', label: 'Central' },
+  { value: 'State', label: 'State' },
 ];
+
+const PAGE_SIZE = 12;
 
 export default function Schemes() {
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [category, setCategory] = useState('');
   const [state, setState] = useState('');
+  const [level, setLevel] = useState('');
+  const [page, setPage] = useState(0);
+  const [categories, setCategories] = useState<{ value: string; label: string }[]>([
+    { value: '', label: 'All Categories' },
+  ]);
+  const [schemes, setSchemes] = useState<SchemeSummary[]>([]);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
 
-  const filteredSchemes = schemes.filter((s) => {
-    const matchesSearch = s.name.toLowerCase().includes(search.toLowerCase()) ||
-      s.description.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = !category || s.category.toLowerCase() === category;
-    const matchesState = !state || s.state.toLowerCase() === state || s.state === 'All India';
-    return matchesSearch && matchesCategory && matchesState;
-  });
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(0);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    schemeService
+      .categories()
+      .then((list) =>
+        setCategories([
+          { value: '', label: 'All Categories' },
+          ...list.map((c) => ({ value: c, label: c })),
+        ])
+      )
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const result = await schemeService.list({
+          q: debouncedSearch || undefined,
+          category: category || undefined,
+          state: state || undefined,
+          level: level || undefined,
+          page,
+          size: PAGE_SIZE,
+        });
+        if (!cancelled) {
+          setSchemes(result.content);
+          setTotalElements(result.totalElements);
+          setTotalPages(result.totalPages);
+        }
+      } catch {
+        if (!cancelled) {
+          setError('Could not load schemes. Please try again.');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedSearch, category, state, level, page, attempt]);
+
+  const clearFilters = () => {
+    setSearch('');
+    setCategory('');
+    setState('');
+    setLevel('');
+    setPage(0);
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Government Schemes</h1>
-          <p className="text-gray-500 mt-1">Discover schemes you may be eligible for</p>
+          <p className="text-gray-500 mt-1">
+            {totalElements > 0 ? `${totalElements} schemes in the catalog` : 'Discover schemes you may be eligible for'}
+          </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="gap-2">
-            <Filter className="h-4 w-4" />
-            Filters
-          </Button>
+        <div className="flex gap-2 items-center text-sm text-gray-500">
+          <Filter className="h-4 w-4" />
+          Eligibility checking arrives in Phase 6
         </div>
       </div>
 
       <Card padding="md">
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="md:col-span-2">
               <Input
                 placeholder="Search schemes by name, keyword..."
@@ -112,7 +135,7 @@ export default function Schemes() {
               <Select
                 placeholder="Category"
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onChange={(e) => { setCategory(e.target.value); setPage(0); }}
                 options={categories}
                 className="w-full"
               />
@@ -121,8 +144,17 @@ export default function Schemes() {
               <Select
                 placeholder="State"
                 value={state}
-                onChange={(e) => setState(e.target.value)}
+                onChange={(e) => { setState(e.target.value); setPage(0); }}
                 options={states}
+                className="w-full"
+              />
+            </div>
+            <div>
+              <Select
+                placeholder="Level"
+                value={level}
+                onChange={(e) => { setLevel(e.target.value); setPage(0); }}
+                options={levels}
                 className="w-full"
               />
             </div>
@@ -130,66 +162,91 @@ export default function Schemes() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredSchemes.map((scheme) => (
-          <SchemeCard key={scheme.id} scheme={scheme} />
-        ))}
-      </div>
-
-      {filteredSchemes.length === 0 && (
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <LoadingSpinner size="lg" />
+        </div>
+      ) : error ? (
         <Card padding="lg" className="text-center">
           <CardContent>
-            <p className="text-gray-500">No schemes found matching your criteria.</p>
-            <Button variant="outline" className="mt-4" onClick={() => { setSearch(''); setCategory(''); setState(''); }}>
-              Clear filters
+            <p className="text-red-600">{error}</p>
+            <Button variant="outline" className="mt-4" onClick={() => setAttempt((a) => a + 1)}>
+              Retry
             </Button>
           </CardContent>
         </Card>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {schemes.map((scheme) => (
+              <SchemeCard key={scheme.id} scheme={scheme} />
+            ))}
+          </div>
+
+          {schemes.length === 0 && (
+            <Card padding="lg" className="text-center">
+              <CardContent>
+                <p className="text-gray-500">No schemes found matching your criteria.</p>
+                <Button variant="outline" className="mt-4" onClick={clearFilters}>
+                  Clear filters
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-4">
+              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(page - 1)}>
+                Previous
+              </Button>
+              <span className="text-sm text-gray-600">
+                Page {page + 1} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page + 1 >= totalPages}
+                onClick={() => setPage(page + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 }
 
-interface SchemeCardProps {
-  scheme: typeof schemes[0];
-}
-
-function SchemeCard({ scheme }: SchemeCardProps) {
-  const statusConfig = {
-    eligible: { label: 'Eligible', className: 'bg-green-100 text-green-700' },
-    needs_info: { label: 'Need Info', className: 'bg-yellow-100 text-yellow-700' },
-    not_eligible: { label: 'Not Eligible', className: 'bg-red-100 text-red-700' },
-  };
-
-  const status = statusConfig[scheme.status];
-
+function SchemeCard({ scheme }: { scheme: SchemeSummary }) {
   return (
     <Card padding="md" hover className="h-full flex flex-col">
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <p className="text-xs text-gray-500 uppercase tracking-wide">{scheme.category}</p>
-          <h3 className="font-semibold text-gray-900 mt-1">{scheme.name}</h3>
-          <p className="text-sm text-gray-500 mt-1">{scheme.shortTitle}</p>
-        </div>
-        <span className={`px-2 py-1 text-xs font-medium rounded-full ${status.className}`}>
-          {status.label}
-        </span>
+      <div className="mb-3">
+        <p className="text-xs text-gray-500 uppercase tracking-wide">{scheme.category || 'General'}</p>
+        <h3 className="font-semibold text-gray-900 mt-1">{scheme.name || scheme.slug}</h3>
+        {scheme.shortTitle && <p className="text-sm text-gray-500 mt-1">{scheme.shortTitle}</p>}
       </div>
 
-      <p className="text-gray-600 text-sm mb-3 flex-1">{scheme.description}</p>
+      {scheme.description && (
+        <p className="text-gray-600 text-sm mb-3 flex-1 line-clamp-3">{scheme.description}</p>
+      )}
 
       <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-gray-300" />
-          {scheme.state}
-        </span>
-        <span className="font-medium text-gray-900">{scheme.benefit}</span>
+        {scheme.state && (
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-gray-300" />
+            {scheme.state}
+          </span>
+        )}
+        {scheme.benefitType && <span className="font-medium text-gray-900">{scheme.benefitType}</span>}
       </div>
 
-      <div className="pt-3 border-t border-gray-100">
-        <Button variant="outline" className="w-full" size="sm">
-          View Details
-        </Button>
+      <div className="pt-3 border-t border-gray-100 mt-auto">
+        <Link to={`/schemes/${scheme.id}`}>
+          <Button variant="outline" className="w-full" size="sm">
+            View Details
+          </Button>
+        </Link>
       </div>
     </Card>
   );
