@@ -63,7 +63,7 @@ export default function Register() {
     <Card padding="lg">
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-gray-900">Create an account</h2>
-        <p className="text-gray-500 mt-1">Start discovering government schemes</p>
+        <p className="text-gray-500 mt-1">Start discovering government schemes. We&apos;ll email you a verification link.</p>
       </div>
 
       {error && (

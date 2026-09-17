@@ -3,6 +3,8 @@ import { useAuth } from './context/AuthContext';
 import { MainLayout, AuthLayout } from './layouts';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import VerifyEmail from './pages/VerifyEmail';
+import Admin from './pages/Admin';
 import Dashboard from './pages/Dashboard';
 import Schemes from './pages/Schemes';
 import SchemeDetail from './pages/SchemeDetail';
@@ -41,6 +43,24 @@ const AuthRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return !isAuthenticated ? <>{children}</> : <Navigate to="/dashboard" replace />;
 };
 
+const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, isAdmin, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return isAdmin ? <>{children}</> : <Navigate to="/dashboard" replace />;
+};
+
 function App() {
   return (
     <Routes>
@@ -58,6 +78,11 @@ function App() {
           </AuthLayout>
         </AuthRoute>
       } />
+      <Route path="/verify-email" element={
+        <AuthLayout>
+          <VerifyEmail />
+        </AuthLayout>
+      } />
       <Route element={
         <ProtectedRoute>
           <MainLayout />
@@ -71,6 +96,11 @@ function App() {
         <Route path="/applications" element={<Applications />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/admin" element={
+          <AdminRoute>
+            <Admin />
+          </AdminRoute>
+        } />
       </Route>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

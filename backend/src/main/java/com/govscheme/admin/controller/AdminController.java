@@ -16,7 +16,7 @@ import java.util.Map;
  * defense-in-depth so protection survives URL-matcher refactors.
  */
 @RestController
-@RequestMapping("/admin")
+@RequestMapping("/api/admin")
 public class AdminController {
 
     @GetMapping("/ping")

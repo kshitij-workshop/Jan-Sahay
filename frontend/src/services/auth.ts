@@ -55,6 +55,16 @@ export const authService = {
     return response.data.data;
   },
 
+  async verifyEmail(token: string): Promise<string> {
+    const response = await api.post<{ data: unknown; message: string }>('/auth/verify-email', { token });
+    return response.data.message;
+  },
+
+  async resendVerification(email: string): Promise<string> {
+    const response = await api.post<{ data: unknown; message: string }>('/auth/resend-verification', { email });
+    return response.data.message;
+  },
+
   logout(): void {
     clearTokens();
   },
