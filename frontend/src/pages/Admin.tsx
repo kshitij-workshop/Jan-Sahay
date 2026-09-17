@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ShieldCheck, AlertTriangle, Loader2, RefreshCw } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, Loader2, RefreshCw, Upload } from 'lucide-react';
 import { adminService, SyncJob } from '../services/admin';
 import { Card, CardHeader, CardContent } from '../components/common/Card';
 import { Button } from '../components/common/Button';
@@ -13,6 +13,7 @@ export default function Admin() {
   const [detail, setDetail] = useState('');
   const [jobs, setJobs] = useState<SyncJob[]>([]);
   const [syncing, setSyncing] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
 
   const loadJobs = async () => {
@@ -48,19 +49,34 @@ export default function Admin() {
     };
   }, []);
 
+  const describe = (kind: string, job: SyncJob) =>
+    `${kind} ${job.status}: fetched ${job.fetched}, created ${job.createdCount}, updated ${job.updatedCount}, failed ${job.failedCount}.`;
+
   const handleSync = async () => {
     setSyncing(true);
     setSyncMessage('');
     try {
       const job = await adminService.syncSchemes();
-      setSyncMessage(
-        `Sync ${job.status}: fetched ${job.fetched}, created ${job.createdCount}, updated ${job.updatedCount}, failed ${job.failedCount}.`
-      );
+      setSyncMessage(describe('Sync', job));
       await loadJobs();
     } catch (err: any) {
       setSyncMessage(err.response?.data?.message || 'Sync failed. Please try again.');
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleImport = async () => {
+    setImporting(true);
+    setSyncMessage('');
+    try {
+      const job = await adminService.importSchemes();
+      setSyncMessage(describe('Import', job));
+      await loadJobs();
+    } catch (err: any) {
+      setSyncMessage(err.response?.data?.message || 'Import failed. Please try again.');
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -105,9 +121,14 @@ export default function Admin() {
             title="Scheme synchronization"
             subtitle="Pulls schemes from myScheme.gov.in (dev limit applies)"
             action={
-              <Button onClick={handleSync} loading={syncing} disabled={syncing} size="sm">
-                <RefreshCw className="h-4 w-4" /> Run sync
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={handleImport} loading={importing} disabled={importing || syncing} size="sm" variant="outline">
+                  <Upload className="h-4 w-4" /> Import file
+                </Button>
+                <Button onClick={handleSync} loading={syncing} disabled={syncing || importing} size="sm">
+                  <RefreshCw className="h-4 w-4" /> Run sync
+                </Button>
+              </div>
             }
           />
           <CardContent>
