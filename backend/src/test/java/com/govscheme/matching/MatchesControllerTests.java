@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.govscheme.auth.TestMailConfig;
 import com.govscheme.scheme.entity.Scheme;
 import com.govscheme.scheme.entity.SchemeRepository;
+import com.govscheme.matching.entity.UserSchemeMatchRepository;
+import com.govscheme.eligibility.entity.SchemeEligibilityRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -40,6 +42,19 @@ class MatchesControllerTests {
 
     @Autowired
     private SchemeRepository schemeRepository;
+
+    @Autowired
+    private UserSchemeMatchRepository matchRepository;
+
+    @Autowired
+    private SchemeEligibilityRepository eligibilityRepository;
+
+    @org.junit.jupiter.api.BeforeEach
+    void cleanCatalog() {
+        matchRepository.deleteAll();
+        eligibilityRepository.deleteAll();
+        schemeRepository.deleteAll();
+    }
 
     private String uniqueEmail(String prefix) {
         return prefix + "+" + UUID.randomUUID() + "@example.com";

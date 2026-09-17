@@ -12,7 +12,16 @@ import com.govscheme.profile.entity.UserAddressRepository;
 import com.govscheme.profile.entity.UserProfile;
 import com.govscheme.profile.entity.UserProfileRepository;
 import com.govscheme.scheme.entity.Scheme;
+import com.govscheme.scheme.entity.SchemeApplicationStepRepository;
+import com.govscheme.scheme.entity.SchemeBeneficiaryRepository;
+import com.govscheme.scheme.entity.SchemeCategoryRepository;
+import com.govscheme.scheme.entity.SchemeDocumentRepository;
+import com.govscheme.scheme.entity.SchemeFaqRepository;
+import com.govscheme.scheme.entity.SchemeRawDataRepository;
+import com.govscheme.scheme.entity.SchemeReferenceRepository;
 import com.govscheme.scheme.entity.SchemeRepository;
+import com.govscheme.scheme.entity.SchemeStateRepository;
+import com.govscheme.scheme.entity.SchemeTagRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,11 +62,50 @@ class MatchingServiceTest {
     @Autowired
     private UserSchemeMatchRepository matchRepository;
 
+    @Autowired
+    private SchemeTagRepository tagRepository;
+
+    @Autowired
+    private SchemeStateRepository stateRepository;
+
+    @Autowired
+    private SchemeFaqRepository faqRepository;
+
+    @Autowired
+    private SchemeDocumentRepository documentRepository;
+
+    @Autowired
+    private SchemeApplicationStepRepository stepRepository;
+
+    @Autowired
+    private SchemeCategoryRepository categoryRepository;
+
+    @Autowired
+    private SchemeBeneficiaryRepository beneficiaryRepository;
+
+    @Autowired
+    private SchemeReferenceRepository referenceRepository;
+
+    @Autowired
+    private SchemeRawDataRepository rawDataRepository;
+
     private String userId;
     private String schemeId;
 
     @BeforeEach
-    void seed() {
+    void cleanAndSeed() {
+        matchRepository.deleteAll();
+        eligibilityRepository.deleteAll();
+        rawDataRepository.deleteAll();
+        tagRepository.deleteAll();
+        stateRepository.deleteAll();
+        faqRepository.deleteAll();
+        documentRepository.deleteAll();
+        stepRepository.deleteAll();
+        categoryRepository.deleteAll();
+        beneficiaryRepository.deleteAll();
+        referenceRepository.deleteAll();
+        schemeRepository.deleteAll();
         User user = new User();
         user.setEmail("match-" + UUID.randomUUID() + "@example.com");
         user.setPhone("9" + UUID.randomUUID().toString().replace("-", "").substring(0, 9));
