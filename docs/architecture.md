@@ -598,4 +598,4 @@ All external dependencies have mock implementations:
 - Seed data script for instant demo journey
 
 This allows full demo without API keys or paid services.
-<!-- churn-test 2 -->
+<!-- churn-test 7 -->
