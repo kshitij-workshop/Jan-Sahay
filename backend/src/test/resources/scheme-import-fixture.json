@@ -1,0 +1,8 @@
+[{"slug":"fixture-scheme","id":"fix001","sourceUrl":"https://example.com/fixture",
+"level":"State","schemeName":"Fixture Scheme","shortTitle":"FIX",
+"ministry":"Ministry of Fixtures","benefitType":"Cash",
+"briefDescription":"Brief","eligibility_md":"Eligibility",
+"categories":["Education"],"beneficiaries":["Student"],"tags":["study"],
+"faqs":[{"question":"Who?","answer_md":"Students"}],
+"references":[{"title":"Guide","url":"https://example.com/g.pdf"}],
+"applicationProcess":[{"mode":"Online","url":"","process_md":"Step 1: Register"}]}]
