@@ -4,7 +4,7 @@ import { CheckCircle, AlertCircle, AlertTriangle, ChevronRight } from 'lucide-re
 import { Card, CardContent } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
-import { matchService, Match, MatchStatus } from '../services/matches';
+import { matchService, Match, MatchStatus, MatchSummary } from '../services/matches';
 
 const statusConfig: Record<MatchStatus, { label: string; className: string; icon: React.ElementType }> = {
   ELIGIBLE: { label: 'Eligible', className: 'bg-green-100 text-green-700', icon: CheckCircle },
@@ -17,6 +17,12 @@ type Filter = 'ALL' | MatchStatus;
 export default function MyMatches() {
   const [filter, setFilter] = useState<Filter>('ALL');
   const [matches, setMatches] = useState<Match[]>([]);
+  const [summary, setSummary] = useState<MatchSummary>({
+    total: 0,
+    eligible: 0,
+    insufficientInformation: 0,
+    notEligible: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -26,9 +32,13 @@ export default function MyMatches() {
       setLoading(true);
       setError('');
       try {
-        const data = await matchService.list(filter === 'ALL' ? undefined : filter);
+        const [data, totals] = await Promise.all([
+          matchService.list(filter === 'ALL' ? undefined : filter),
+          matchService.summary(),
+        ]);
         if (!cancelled) {
           setMatches(data);
+          setSummary(totals);
         }
       } catch {
         if (!cancelled) {
@@ -45,8 +55,6 @@ export default function MyMatches() {
       cancelled = true;
     };
   }, [filter]);
-
-  const count = (status: MatchStatus) => matches.filter((m) => m.status === status).length;
 
   return (
     <div className="space-y-6">
@@ -70,10 +78,10 @@ export default function MyMatches() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Matches" value={matches.length} />
-        <StatCard label="Eligible" value={filter === 'ALL' ? count('ELIGIBLE') : matches.length} tone="text-green-600" />
-        <StatCard label="Need Information" value={filter === 'ALL' ? count('INSUFFICIENT_INFORMATION') : matches.length} tone="text-yellow-600" />
-        <StatCard label="Not Eligible" value={filter === 'ALL' ? count('NOT_ELIGIBLE') : matches.length} tone="text-red-600" />
+        <StatCard label="Total Matches" value={summary.total} />
+        <StatCard label="Eligible" value={summary.eligible} tone="text-green-600" />
+        <StatCard label="Need Information" value={summary.insufficientInformation} tone="text-yellow-600" />
+        <StatCard label="Not Eligible" value={summary.notEligible} tone="text-red-600" />
       </div>
 
       {loading ? (
