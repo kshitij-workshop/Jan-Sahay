@@ -1,57 +1,72 @@
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, FileText, CheckCircle, AlertCircle, Clock, MapPin, User, AlertTriangle } from 'lucide-react';
-import { Card, CardHeader, CardContent, CardFooter } from '../components/common/Card';
+import { ArrowLeft, FileText, Clock, MapPin, Building2, ExternalLink, AlertTriangle } from 'lucide-react';
+import { Card, CardHeader, CardContent } from '../components/common/Card';
 import { Button } from '../components/common/Button';
+import { LoadingSpinner } from '../components/common/LoadingSpinner';
+import { schemeService, SchemeDetail as Detail } from '../services/schemes';
 
 export default function SchemeDetail() {
   const { id } = useParams();
+  const [scheme, setScheme] = useState<Detail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const scheme = {
-    id: '1',
-    name: 'PM Kisan Samman Nidhi',
-    shortTitle: 'PM-KISAN',
-    description: 'The PM-KISAN scheme aims to supplement the financial needs of small and marginal farmers in procuring various inputs to ensure proper crop health and appropriate yields, commensurate with the anticipated farm income at the end of each crop cycle.',
-    category: 'Agriculture',
-    state: 'All India',
-    level: 'Central',
-    ministry: 'Ministry of Agriculture & Farmers Welfare',
-    benefit: '₹6,000 per year in three equal installments',
-    eligibility: [
-      'Small and marginal farmers holding cultivable land',
-      'Farmer families with combined landholding up to 2 hectares',
-      'Must be Indian citizen',
-      'Land ownership records must be updated',
-    ],
-    documents: [
-      'Aadhaar Card',
-      'Land ownership documents',
-      'Bank account passbook',
-      'Mobile number linked to Aadhaar',
-    ],
-    process: [
-      'Visit nearest CSC or PM-KISAN portal',
-      'Register with Aadhaar and land details',
-      'Submit required documents',
-      'Verification by state authorities',
-      'Amount credited directly to bank account',
-    ],
-    faqs: [
-      { q: 'Who is eligible for PM-KISAN?', a: 'All small and marginal farmer families having combined landholding up to 2 hectares.' },
-      { q: 'How is the benefit paid?', a: '₹6,000 per year in three equal installments of ₹2,000 each, directly to bank account.' },
-      { q: 'Can tenant farmers apply?', a: 'No, only land owners with valid land records are eligible.' },
-    ],
-    officialUrl: 'https://pmkisan.gov.in/',
-    lastSynced: '2024-01-15',
-    status: 'eligible',
-  };
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      if (!id) {
+        setError('No scheme selected.');
+        setLoading(false);
+        return;
+      }
+      try {
+        const detail = await schemeService.getById(id);
+        if (!cancelled) {
+          setScheme(detail);
+        }
+      } catch (err: any) {
+        if (!cancelled) {
+          setError(
+            err.response?.status === 404
+              ? 'Scheme not found.'
+              : 'Could not load this scheme. Please try again.'
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
-  const statusConfig = {
-    eligible: { label: 'Eligible', className: 'bg-green-100 text-green-700', icon: CheckCircle },
-    needs_info: { label: 'Need More Information', className: 'bg-yellow-100 text-yellow-700', icon: AlertCircle },
-    not_eligible: { label: 'Not Eligible', className: 'bg-red-100 text-red-700', icon: AlertTriangle },
-  };
+  if (loading) {
+    return (
+      <div className="min-h-[40vh] flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
-  const status = statusConfig[scheme.status as keyof typeof statusConfig];
+  if (error || !scheme) {
+    return (
+      <div className="space-y-6">
+        <Link to="/schemes" className="inline-flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700">
+          <ArrowLeft className="h-4 w-4" /> Back to schemes
+        </Link>
+        <Card padding="lg" className="text-center">
+          <CardContent>
+            <p className="text-gray-600">{error || 'Scheme not found.'}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -60,117 +75,122 @@ export default function SchemeDetail() {
           <ArrowLeft className="h-5 w-5 text-gray-600" />
         </Link>
         <div>
-          <p className="text-sm text-gray-500">Schemes / {scheme.category}</p>
-          <h1 className="text-2xl font-bold text-gray-900">{scheme.name}</h1>
+          <p className="text-sm text-gray-500">Schemes / {scheme.category || 'General'}</p>
+          <h1 className="text-2xl font-bold text-gray-900">{scheme.name || scheme.slug}</h1>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <Card padding="md">
-            <CardHeader
-              title={scheme.name}
-              subtitle={scheme.shortTitle}
-              action={
-                <span className={`px-3 py-1 text-sm font-medium rounded-full ${status.className} flex items-center gap-1`}>
-                  <status.icon className="h-4 w-4" />
-                  {status.label}
-                </span>
-              }
-            />
+            <CardHeader title={scheme.name || scheme.slug} subtitle={scheme.shortTitle} />
             <CardContent>
-              <p className="text-gray-600 mb-6">{scheme.description}</p>
+              {scheme.description && <p className="text-gray-600 mb-6">{scheme.description}</p>}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <FileText className="h-5 w-5 text-primary-600" />
-                  <div>
-                    <p className="text-xs text-gray-500">Category</p>
-                    <p className="font-medium text-gray-900">{scheme.category}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <MapPin className="h-5 w-5 text-primary-600" />
-                  <div>
-                    <p className="text-xs text-gray-500">State</p>
-                    <p className="font-medium text-gray-900">{scheme.state}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <User className="h-5 w-5 text-primary-600" />
-                  <div>
-                    <p className="text-xs text-gray-500">Level</p>
-                    <p className="font-medium text-gray-900">{scheme.level}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <Clock className="h-5 w-5 text-primary-600" />
-                  <div>
-                    <p className="text-xs text-gray-500">Last Synced</p>
-                    <p className="font-medium text-gray-900">{scheme.lastSynced}</p>
-                  </div>
-                </div>
+                <Fact icon={FileText} label="Category" value={scheme.category} />
+                <Fact icon={MapPin} label="State" value={scheme.state} />
+                <Fact icon={Building2} label="Ministry" value={scheme.ministry} />
+                <Fact
+                  icon={Clock}
+                  label="Last Synced"
+                  value={scheme.lastSyncedAt ? new Date(scheme.lastSyncedAt).toLocaleDateString() : undefined}
+                />
               </div>
 
+              {scheme.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {scheme.tags.map((tag) => (
+                    <span key={tag} className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded-full">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+
               <div className="space-y-6">
-                <section>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Benefits</h3>
-                  <p className="text-gray-600">{scheme.benefit}</p>
-                </section>
+                {scheme.detailedDescription && (
+                  <Section title="About this scheme">
+                    <Markdown text={scheme.detailedDescription} />
+                  </Section>
+                )}
 
-                <section>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Eligibility Criteria</h3>
-                  <ul className="space-y-2">
-                    {scheme.eligibility.map((item, i) => (
-                      <li key={i} className="flex items-start gap-2 text-gray-600">
-                        <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
+                {scheme.benefits && (
+                  <Section title="Benefits">
+                    <Markdown text={scheme.benefits} />
+                  </Section>
+                )}
 
-                <section>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Required Documents</h3>
-                  <ul className="space-y-2">
-                    {scheme.documents.map((doc, i) => (
-                      <li key={i} className="flex items-center gap-2 text-gray-600">
-                        <FileText className="h-5 w-5 text-primary-600 flex-shrink-0" />
-                        {doc}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
+                {scheme.eligibility && (
+                  <Section title="Eligibility (as published)">
+                    <Markdown text={scheme.eligibility} />
+                    <p className="text-sm text-gray-500 mt-3">
+                      Automated eligibility matching arrives in Phase 6. Final eligibility is
+                      always determined by the authorities.
+                    </p>
+                  </Section>
+                )}
 
-                <section>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Application Process</h3>
-                  <ol className="space-y-3">
-                    {scheme.process.map((step, i) => (
-                      <li key={i} className="flex gap-3">
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary-100 text-primary-700 text-sm font-medium flex items-center justify-center">
-                          {i + 1}
-                        </span>
-                        <p className="text-gray-600 mt-0.5">{step}</p>
-                      </li>
-                    ))}
-                  </ol>
-                </section>
+                {scheme.exclusions && (
+                  <Section title="Exclusions">
+                    <Markdown text={scheme.exclusions} />
+                  </Section>
+                )}
 
-                <section>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Frequently Asked Questions</h3>
-                  <div className="space-y-3">
-                    {scheme.faqs.map((faq, i) => (
-                      <details key={i} className="group border border-gray-200 rounded-lg">
-                        <summary className="p-4 font-medium text-gray-900 cursor-pointer list-none">
-                          {faq.q}
-                        </summary>
-                        <div className="px-4 pb-4 text-gray-600 border-t border-gray-200">
-                          {faq.a}
-                        </div>
-                      </details>
-                    ))}
-                  </div>
-                </section>
+                {scheme.documents.length > 0 && (
+                  <section>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Required Documents</h3>
+                    <ul className="space-y-2">
+                      {scheme.documents.map((doc, i) => (
+                        <li key={i} className="flex items-center gap-2 text-gray-600">
+                          <FileText className="h-5 w-5 text-primary-600 flex-shrink-0" />
+                          {doc.name}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                )}
+                {scheme.documents.length === 0 && scheme.documentsText && (
+                  <Section title="Required Documents">
+                    <Markdown text={scheme.documentsText} />
+                  </Section>
+                )}
+
+                {scheme.applicationProcess.length > 0 && (
+                  <section>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Application Process</h3>
+                    <ol className="space-y-3">
+                      {scheme.applicationProcess.map((step) => (
+                        <li key={step.stepNo} className="flex gap-3">
+                          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary-100 text-primary-700 text-sm font-medium flex items-center justify-center">
+                            {step.stepNo}
+                          </span>
+                          <p className="text-gray-600 mt-0.5">{step.description}</p>
+                        </li>
+                      ))}
+                    </ol>
+                  </section>
+                )}
+
+                {scheme.faqs.length > 0 && (
+                  <section>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Frequently Asked Questions</h3>
+                    <div className="space-y-3">
+                      {scheme.faqs.map((faq, i) => (
+                        <details key={i} className="group border border-gray-200 rounded-lg">
+                          <summary className="p-4 font-medium text-gray-900 cursor-pointer list-none">
+                            {faq.question}
+                          </summary>
+                          {faq.answer && (
+                            <div className="px-4 pb-4 text-gray-600 border-t border-gray-200 whitespace-pre-wrap">
+                              {faq.answer}
+                            </div>
+                          )}
+                        </details>
+                      ))}
+                    </div>
+                  </section>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -178,51 +198,36 @@ export default function SchemeDetail() {
 
         <div className="space-y-6">
           <Card padding="md">
-            <CardHeader title="Quick Actions" />
+            <CardHeader title="Official sources" />
             <CardContent className="space-y-3">
-              <Button variant="primary" className="w-full" size="lg">
-                Apply with Smart Form
-              </Button>
-              <Button variant="outline" className="w-full" size="lg">
-                Check Eligibility
-              </Button>
-              <Button variant="ghost" className="w-full justify-start" size="lg">
-                <a href={scheme.officialUrl} target="_blank" rel="noopener noreferrer" className="w-full flex items-center gap-2">
-                  <ArrowLeft className="h-4 w-4" />
-                  Official Portal
+              {scheme.sourceUrl && (
+                <a href={scheme.sourceUrl} target="_blank" rel="noopener noreferrer" className="block">
+                  <Button variant="primary" className="w-full gap-1" size="lg">
+                    <ExternalLink className="h-4 w-4" /> Open Official Portal
+                  </Button>
                 </a>
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card padding="md">
-            <CardHeader title="Eligibility Summary" />
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-green-600">
-                  <CheckCircle className="h-5 w-5" /> Age: 28 years ✓
-                </div>
-                <div className="flex items-center gap-2 text-green-600">
-                  <CheckCircle className="h-5 w-5" /> State: Bihar ✓
-                </div>
-                <div className="flex items-center gap-2 text-green-600">
-                  <CheckCircle className="h-5 w-5" /> Occupation: Farmer ✓
-                </div>
-                <div className="flex items-center gap-2 text-yellow-600">
-                  <AlertCircle className="h-5 w-5" /> Land records: Pending verification
-                </div>
-              </div>
-              <p className="text-sm text-gray-500 mt-4">
-                Based on your profile information. Final eligibility determined by authorities.
-              </p>
+              )}
+              {scheme.references.map((ref, i) => (
+                <a key={i} href={ref.url} target="_blank" rel="noopener noreferrer" className="block">
+                  <Button variant="outline" className="w-full justify-start gap-1" size="lg">
+                    <ExternalLink className="h-4 w-4" /> {ref.title}
+                  </Button>
+                </a>
+              ))}
+              {!scheme.sourceUrl && scheme.references.length === 0 && (
+                <p className="text-sm text-gray-500">No official links stored for this scheme yet.</p>
+              )}
             </CardContent>
           </Card>
 
           <Card padding="md" className="bg-blue-50 border-blue-200">
-            <CardHeader title="Important" />
+            <CardHeader title="About this data" />
             <CardContent>
               <p className="text-sm text-blue-800">
-                This information is based on data from myScheme.gov.in. Always verify details on the official portal before applying.
+                Shown exactly as synchronized from {scheme.source || 'the source catalog'}
+                {scheme.lastSyncedAt && ` on ${new Date(scheme.lastSyncedAt).toLocaleDateString()}`}.
+                Always verify details on the official portal before applying. This platform
+                never submits applications on your behalf.
               </p>
             </CardContent>
           </Card>
@@ -230,4 +235,30 @@ export default function SchemeDetail() {
       </div>
     </div>
   );
+}
+
+function Fact({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value?: string }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+      <Icon className="h-5 w-5 text-primary-600 flex-shrink-0" />
+      <div className="min-w-0">
+        <p className="text-xs text-gray-500">{label}</p>
+        <p className="font-medium text-gray-900 truncate">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <h3 className="text-lg font-semibold text-gray-900 mb-3">{title}</h3>
+      {children}
+    </section>
+  );
+}
+
+function Markdown({ text }: { text: string }) {
+  return <p className="text-gray-600 whitespace-pre-wrap">{text}</p>;
 }
