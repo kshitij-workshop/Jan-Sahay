@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /**
  * Public scheme catalog browsing. Demographic eligibility filters live in the
  * eligibility engine (Phase 6); browsing filters are textual and categorical.
@@ -37,6 +39,11 @@ public class SchemeController {
         PageResponse<SchemeSummaryResponse> result =
             queryService.search(q, category, state, level, page, size);
         return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
+    @GetMapping("/categories")
+    public ResponseEntity<ApiResponse<List<String>>> categories() {
+        return ResponseEntity.ok(ApiResponse.success(queryService.categories()));
     }
 
     @GetMapping("/{id}")

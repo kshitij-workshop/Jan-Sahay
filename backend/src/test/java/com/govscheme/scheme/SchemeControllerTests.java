@@ -158,6 +158,15 @@ class SchemeControllerTests {
     }
 
     @Test
+    void categoriesListsDistinctValues() throws Exception {
+        mockMvc.perform(get("/api/schemes/categories"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data").isArray())
+            .andExpect(jsonPath("$.data[?(@=='Agriculture')]").exists())
+            .andExpect(jsonPath("$.data[?(@=='Education')]").exists());
+    }
+
+    @Test
     void unknownIdReturns404() throws Exception {
         mockMvc.perform(get("/api/schemes/does-not-exist"))
             .andExpect(status().isNotFound())

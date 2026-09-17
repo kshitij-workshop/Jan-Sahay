@@ -23,6 +23,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 /**
  * Read-only scheme browsing over the synced catalog. Text search matches
  * name/short-title/descriptions/category; category and state filters also
@@ -113,6 +115,22 @@ public class SchemeQueryService {
         }
         Page<Scheme> result = schemeRepository.findAll(spec, pageable);
         return PageResponse.from(result, SchemeSummaryResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> categories() {
+        java.util.TreeSet<String> categories = new java.util.TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        for (String category : schemeRepository.findDistinctCategories()) {
+            if (category != null && !category.isBlank()) {
+                categories.add(category.trim());
+            }
+        }
+        for (String category : categoryRepository.findDistinctCategories()) {
+            if (category != null && !category.isBlank()) {
+                categories.add(category.trim());
+            }
+        }
+        return new java.util.ArrayList<>(categories);
     }
 
     @Transactional(readOnly = true)

@@ -11,6 +11,9 @@ import java.util.List;
 @Repository
 public interface SchemeCategoryRepository extends JpaRepository<SchemeCategory, String> {
 
+    @Query("SELECT DISTINCT c.category FROM SchemeCategory c")
+    List<String> findDistinctCategories();
+
     List<SchemeCategory> findBySchemeId(String schemeId);
 
     @Modifying
