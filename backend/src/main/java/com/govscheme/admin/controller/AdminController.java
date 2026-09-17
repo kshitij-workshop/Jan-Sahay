@@ -7,6 +7,7 @@ import com.govscheme.common.dto.PageResponse;
 import com.govscheme.scheme.entity.SyncErrorRepository;
 import com.govscheme.scheme.entity.SyncJob;
 import com.govscheme.scheme.entity.SyncJobRepository;
+import com.govscheme.scheme.sync.SchemeFileImportService;
 import com.govscheme.scheme.sync.SchemeSyncService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,13 +34,16 @@ import java.util.Map;
 public class AdminController {
 
     private final SchemeSyncService syncService;
+    private final SchemeFileImportService fileImportService;
     private final SyncJobRepository jobRepository;
     private final SyncErrorRepository errorRepository;
 
     public AdminController(SchemeSyncService syncService,
+                           SchemeFileImportService fileImportService,
                            SyncJobRepository jobRepository,
                            SyncErrorRepository errorRepository) {
         this.syncService = syncService;
+        this.fileImportService = fileImportService;
         this.jobRepository = jobRepository;
         this.errorRepository = errorRepository;
     }
@@ -62,6 +66,13 @@ public class AdminController {
             @RequestParam(required = false) Integer limit) {
         SyncJob job = syncService.runSync(lang, from, limit);
         return ResponseEntity.ok(ApiResponse.success(SyncJobResponse.from(job), "Sync finished"));
+    }
+
+    @PostMapping("/schemes/import")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<SyncJobResponse>> importSchemes() {
+        SyncJob job = fileImportService.importFile();
+        return ResponseEntity.ok(ApiResponse.success(SyncJobResponse.from(job), "Import finished"));
     }
 
     @GetMapping("/sync/jobs")
