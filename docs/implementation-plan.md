@@ -175,18 +175,26 @@
 
 ---
 
-## Phase 7: User-Scheme Matching
+## Phase 7: User-Scheme Matching (COMPLETED)
 **Goal**: Store and recalculate matches
 
 ### Backend
-- [ ] UserSchemeMatch entity
-- [ ] MatchingService: recalculate on profile update or scheme sync
-- [ ] Match status, reason, missing info, timestamps
-- [ ] Incremental recalculation (not full scan every time)
+- [x] UserSchemeMatch entity (status, reason, missing info, first/checked/notified timestamps)
+- [x] MatchingService: recalculate on profile update or scheme sync (non-fatal hooks)
+- [x] Match status, reason, missing info, timestamps
+- [x] Recalculation scope: full user catalog on profile write; sync-touched schemes on sync/import
 
 ### Frontend
-- [ ] My Matches page
-- [ ] Match cards with status
+- [x] My Matches page (server verdicts, status filter, reasons, missing info)
+- [x] Match cards with status
+
+**Decisions**:
+- Verdicts recomputed from the engine every time; rows are never trusted blindly.
+  `firstMatchedAt`/`notifiedAt` survive rewrites; `notified_at` reserved for Phase 11.
+- Profile-write and sync hooks catch and log failures so matching can never break
+  saves or syncs; the next trigger retries.
+- MVP iterates users×schemes inline with an explicit note to move to batched/async
+  jobs at scale, behind the same method signatures.
 
 ---
 
@@ -331,6 +339,8 @@
 | 3 - Profile | ✅ Complete |
 | 4 - MyScheme Sync | ✅ Complete |
 | 5 - Scheme Browse | ✅ Complete |
+| 6 - Eligibility | ✅ Complete |
+| 7 - Matching | ✅ Complete |
 | 3 - Profile | ⬜ Pending |
 | 4 - MyScheme Sync | ⬜ Pending |
 | 5 - Scheme Browse | ⬜ Pending |
