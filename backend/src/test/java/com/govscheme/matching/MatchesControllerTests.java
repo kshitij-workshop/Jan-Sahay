@@ -174,4 +174,40 @@ class MatchesControllerTests {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.length()").value(0));
     }
+
+    @Test
+    void summaryCountsAreIndependentOfListFilter() throws Exception {
+        String tokenA = registerAndLogin(uniqueEmail("sumA"));
+        String tokenB = registerAndLogin(uniqueEmail("sumB"));
+
+        Scheme scheme = new Scheme();
+        scheme.setSlug("summable-" + UUID.randomUUID());
+        scheme.setSchemeName("Summable");
+        scheme.setSource("TEST");
+        schemeRepository.save(scheme);
+
+        mockMvc.perform(put("/api/profile")
+                .header("Authorization", "Bearer " + tokenA)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of("fullName", "Sum A"))))
+            .andExpect(status().isOk());
+
+        // A's totals reflect only A's rows.
+        mockMvc.perform(get("/api/matches/summary")
+                .header("Authorization", "Bearer " + tokenA))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.total").value(1))
+            .andExpect(jsonPath("$.data.insufficientInformation").value(1))
+            .andExpect(jsonPath("$.data.eligible").value(0))
+            .andExpect(jsonPath("$.data.notEligible").value(0));
+
+        // B has no rows: all zeros, never A's counts.
+        mockMvc.perform(get("/api/matches/summary")
+                .header("Authorization", "Bearer " + tokenB))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.total").value(0));
+
+        mockMvc.perform(get("/api/matches/summary"))
+            .andExpect(status().isForbidden());
+    }
 }

@@ -4,6 +4,7 @@ import com.govscheme.auth.entity.UserRepository;
 import com.govscheme.common.dto.ApiResponse;
 import com.govscheme.common.exception.ResourceNotFoundException;
 import com.govscheme.matching.dto.MatchResponse;
+import com.govscheme.matching.dto.MatchSummaryResponse;
 import com.govscheme.matching.entity.UserSchemeMatch;
 import com.govscheme.matching.entity.UserSchemeMatchRepository;
 import com.govscheme.scheme.entity.Scheme;
@@ -48,6 +49,20 @@ public class MatchesController {
             ? matchRepository.findByUserId(userId)
             : matchRepository.findByUserIdAndStatus(userId, status);
         return ResponseEntity.ok(ApiResponse.success(matches.stream().map(this::toResponse).toList()));
+    }
+
+    @GetMapping("/summary")
+    public ResponseEntity<ApiResponse<MatchSummaryResponse>> summary(
+            @AuthenticationPrincipal UserDetails principal) {
+        String userId = userIdFor(principal.getUsername());
+        MatchSummaryResponse summary = new MatchSummaryResponse();
+        summary.setTotal(matchRepository.countByUserId(userId));
+        summary.setEligible(matchRepository.countByUserIdAndStatus(userId, UserSchemeMatch.Status.ELIGIBLE));
+        summary.setInsufficientInformation(
+            matchRepository.countByUserIdAndStatus(userId, UserSchemeMatch.Status.INSUFFICIENT_INFORMATION));
+        summary.setNotEligible(
+            matchRepository.countByUserIdAndStatus(userId, UserSchemeMatch.Status.NOT_ELIGIBLE));
+        return ResponseEntity.ok(ApiResponse.success(summary));
     }
 
     @GetMapping("/{schemeId}")

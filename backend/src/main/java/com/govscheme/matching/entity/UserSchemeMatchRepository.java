@@ -18,4 +18,6 @@ public interface UserSchemeMatchRepository extends JpaRepository<UserSchemeMatch
     List<UserSchemeMatch> findBySchemeId(String schemeId);
 
     long countByUserIdAndStatus(String userId, UserSchemeMatch.Status status);
+
+    long countByUserId(String userId);
 }
