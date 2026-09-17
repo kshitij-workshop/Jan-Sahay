@@ -319,4 +319,4 @@
 5. Create .env.example
 6. Create basic README.md
 7. Verify all services start
-<!-- churn-test 13 -->
+<!-- churn-test 18 -->
