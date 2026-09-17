@@ -148,24 +148,30 @@
 
 ---
 
-## Phase 6: Eligibility Engine
+## Phase 6: Eligibility Engine (COMPLETED)
 **Goal**: Deterministic rule-based eligibility with explanations
 
 ### Backend
-- [ ] Rule interface: `EligibilityRule` with `evaluate(profile, scheme)`
-- [ ] Rules: AgeRule, StateRule, GenderRule, IncomeRule, CasteRule, OccupationRule, StudentRule, DisabilityRule, ResidenceRule, EmploymentRule, BplRule, MaritalStatusRule, MinorityRule
-- [ ] EligibilityService orchestrating rules
-- [ ] Result: ELIGIBLE / NOT_ELIGIBLE / INSUFFICIENT_INFORMATION
-- [ ] Missing fields identification
-- [ ] Structured rule results with pass/fail/missing + messages
+- [x] Rule interface: `EligibilityRule` with `evaluate(profile, scheme)`
+- [x] Rules: AgeRule, StateRule, GenderRule, IncomeRule, CasteRule, OccupationRule, StudentRule, DisabilityRule, ResidenceRule, EmploymentRule, BplRule, MaritalStatusRule, MinorityRule
+- [x] EligibilityService orchestrating rules (+ `GET /api/schemes/{id}/eligibility`, auth-required)
+- [x] Result: ELIGIBLE / NOT_ELIGIBLE / INSUFFICIENT_INFORMATION
+- [x] Missing fields identification (dot-paths)
+- [x] Structured rule results with pass/fail/missing/skip + messages
 
 ### Tests (Critical)
-- [ ] Age 22, req 18-70 → PASS
-- [ ] Age 17, req 18-70 → FAIL
-- [ ] Missing age → INSUFFICIENT_INFORMATION
-- [ ] Bihar user + Bihar scheme → PASS
-- [ ] Other state + Bihar-only → FAIL
-- [ ] Missing income → INSUFFICIENT_INFORMATION
+- [x] Age 22, req 18-70 → PASS
+- [x] Age 17, req 18-70 → FAIL
+- [x] Missing age → INSUFFICIENT_INFORMATION
+- [x] Bihar user + Bihar scheme → PASS
+- [x] Other state + Bihar-only → FAIL
+- [x] Missing income → INSUFFICIENT_INFORMATION
+
+**Decisions**:
+- Rules evaluate admin-curated `scheme_eligibility` rows only; unconstrained dimensions
+  SKIP, missing user data yields MISSING (never FAIL). Free text is display-only.
+- No criteria row = no machine-readable constraints (outcome reflects completeness only).
+- Refresh/access token types enforced; eligibility endpoint requires authentication.
 
 ---
 

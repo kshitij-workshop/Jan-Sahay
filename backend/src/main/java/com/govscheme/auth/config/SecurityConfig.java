@@ -86,6 +86,7 @@ public class SecurityConfig {
                     "/api/auth/resend-verification").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 .requestMatchers("/api/health/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/schemes/*/eligibility").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/schemes/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
