@@ -23,6 +23,9 @@ frontend/node_modules/
 uploads/
 backend/uploads/
 
+# Local data dumps (e.g. data/schemes.json) - large, not for git
+data/
+
 # OS
 .DS_Store
 Thumbs.db

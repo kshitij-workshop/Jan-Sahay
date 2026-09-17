@@ -3,6 +3,12 @@ package com.govscheme.scheme.sync;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.govscheme.scheme.entity.Scheme;
+import com.govscheme.scheme.entity.SchemeBeneficiary;
+import com.govscheme.scheme.entity.SchemeBeneficiaryRepository;
+import com.govscheme.scheme.entity.SchemeCategory;
+import com.govscheme.scheme.entity.SchemeCategoryRepository;
+import com.govscheme.scheme.entity.SchemeReference;
+import com.govscheme.scheme.entity.SchemeReferenceRepository;
 import com.govscheme.scheme.entity.SchemeApplicationStep;
 import com.govscheme.scheme.entity.SchemeApplicationStepRepository;
 import com.govscheme.scheme.entity.SchemeDocument;
@@ -20,6 +26,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Persists one scheme (upsert by slug): normalized row, verbatim raw payload
@@ -36,6 +44,9 @@ public class SchemeUpsertService {
     private final SchemeFaqRepository faqRepository;
     private final SchemeDocumentRepository documentRepository;
     private final SchemeApplicationStepRepository stepRepository;
+    private final SchemeCategoryRepository categoryRepository;
+    private final SchemeBeneficiaryRepository beneficiaryRepository;
+    private final SchemeReferenceRepository referenceRepository;
     private final ObjectMapper objectMapper;
 
     public SchemeUpsertService(SchemeRepository schemeRepository,
@@ -45,6 +56,9 @@ public class SchemeUpsertService {
                                SchemeFaqRepository faqRepository,
                                SchemeDocumentRepository documentRepository,
                                SchemeApplicationStepRepository stepRepository,
+                               SchemeCategoryRepository categoryRepository,
+                               SchemeBeneficiaryRepository beneficiaryRepository,
+                               SchemeReferenceRepository referenceRepository,
                                ObjectMapper objectMapper) {
         this.schemeRepository = schemeRepository;
         this.rawDataRepository = rawDataRepository;
@@ -53,6 +67,9 @@ public class SchemeUpsertService {
         this.faqRepository = faqRepository;
         this.documentRepository = documentRepository;
         this.stepRepository = stepRepository;
+        this.categoryRepository = categoryRepository;
+        this.beneficiaryRepository = beneficiaryRepository;
+        this.referenceRepository = referenceRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -106,6 +123,263 @@ public class SchemeUpsertService {
         replaceSteps(scheme, detail, lang);
 
         return created ? Outcome.CREATED : Outcome.UPDATED;
+    }
+
+    /**
+     * Upserts one item from an offline scheme dump (data/schemes.json shape).
+     * Same idempotency and never-invent guarantees as {@link #upsert}: the
+     * whole item is preserved verbatim in {@code scheme_raw_data} (kind FILE).
+     */
+    @Transactional
+    public Outcome upsertFromFile(JsonNode item) {
+        String slug = text(item, "slug");
+        if (slug == null || slug.isBlank()) {
+            throw new IllegalArgumentException("File item without slug cannot be imported");
+        }
+        boolean created = false;
+        Scheme scheme = schemeRepository.findBySlug(slug).orElseGet(() -> {
+            Scheme fresh = new Scheme();
+            fresh.setSlug(slug);
+            return fresh;
+        });
+        if (scheme.getId() == null) {
+            created = true;
+        }
+
+        scheme.setSchemeName(text(item, "schemeName"));
+        scheme.setShortTitle(text(item, "shortTitle"));
+        scheme.setSchemeType(text(item, "schemeType"));
+        scheme.setNodalMinistry(text(item, "ministry"));
+        scheme.setDepartment(text(item, "department"));
+        scheme.setLevel(text(item, "level"));
+        scheme.setSchemeFor(text(item, "schemeFor"));
+        scheme.setBenefitType(text(item, "benefitType"));
+        scheme.setOpenDate(text(item, "openDate"));
+        scheme.setImageUrl(text(item, "imageUrl"));
+        scheme.setExternalId(text(item, "id"));
+        scheme.setBriefDescription(text(item, "briefDescription"));
+        scheme.setDetailedDescriptionMd(text(item, "detailedDescription_md"));
+        scheme.setBenefitsMd(text(item, "benefits_md"));
+        scheme.setExclusionsMd(text(item, "exclusions_md"));
+        scheme.setEligibilityMd(text(item, "eligibility_md"));
+        scheme.setDocumentsMd(text(item, "documents_md"));
+        scheme.setSource("FILE");
+        scheme.setSourceUrl(text(item, "sourceUrl"));
+        scheme.setLastSyncedAt(Instant.now());
+        scheme = schemeRepository.save(scheme);
+
+        SchemeRawData raw = rawDataRepository.findBySlug(slug).orElseGet(SchemeRawData::new);
+        raw.setSchemeId(scheme.getId());
+        raw.setSlug(slug);
+        raw.setKind("FILE");
+        raw.setPayload(item.toString());
+        rawDataRepository.save(raw);
+
+        replaceFileTags(scheme, item);
+        replaceFileCategories(scheme, item);
+        replaceFileBeneficiaries(scheme, item);
+        replaceFileStates(scheme, item);
+        replaceFileFaqs(scheme, item);
+        replaceFileDocuments(scheme, item);
+        replaceFileReferences(scheme, item);
+        replaceFileSteps(scheme, item);
+
+        return created ? Outcome.CREATED : Outcome.UPDATED;
+    }
+
+    private void replaceFileTags(Scheme scheme, JsonNode item) {
+        tagRepository.deleteBySchemeId(scheme.getId());
+        addTags(scheme, item.get("tags"), "en");
+    }
+
+    private void replaceFileCategories(Scheme scheme, JsonNode item) {
+        categoryRepository.deleteBySchemeId(scheme.getId());
+        addCategories(scheme, item.get("categories"), SchemeCategory.KIND_MAIN);
+        addCategories(scheme, item.get("subCategories"), SchemeCategory.KIND_SUB);
+    }
+
+    private void addCategories(Scheme scheme, JsonNode list, String kind) {
+        if (list == null || !list.isArray()) {
+            return;
+        }
+        for (JsonNode node : list) {
+            String value = node.isTextual() ? node.asText() : null;
+            if (value == null || value.isBlank()) {
+                continue;
+            }
+            SchemeCategory row = new SchemeCategory();
+            row.setSchemeId(scheme.getId());
+            row.setCategory(value.trim());
+            row.setKind(kind);
+            categoryRepository.save(row);
+        }
+    }
+
+    private void replaceFileBeneficiaries(Scheme scheme, JsonNode item) {
+        beneficiaryRepository.deleteBySchemeId(scheme.getId());
+        JsonNode list = item.get("beneficiaries");
+        if (list == null || !list.isArray()) {
+            return;
+        }
+        for (JsonNode node : list) {
+            String value = node.isTextual() ? node.asText() : null;
+            if (value == null || value.isBlank()) {
+                continue;
+            }
+            SchemeBeneficiary row = new SchemeBeneficiary();
+            row.setSchemeId(scheme.getId());
+            row.setBeneficiary(value.trim());
+            beneficiaryRepository.save(row);
+        }
+    }
+
+    private void replaceFileStates(Scheme scheme, JsonNode item) {
+        // Dumps carry no per-state field; keep any states resolved from the
+        // API path untouched by not deleting here. File rows simply add none.
+    }
+
+    private void replaceFileFaqs(Scheme scheme, JsonNode item) {
+        faqRepository.deleteBySchemeId(scheme.getId());
+        JsonNode list = item.get("faqs");
+        if (list == null || !list.isArray()) {
+            return;
+        }
+        int pos = 0;
+        for (JsonNode faq : list) {
+            String question = firstText(faq, "question", "q", "title");
+            if (question == null || question.isBlank()) {
+                continue;
+            }
+            SchemeFaq row = new SchemeFaq();
+            row.setSchemeId(scheme.getId());
+            row.setQuestion(question.trim());
+            row.setAnswer(firstText(faq, "answer", "answer_md", "a", "description", "description_md"));
+            row.setLanguage("en");
+            row.setPosition(pos++);
+            faqRepository.save(row);
+        }
+    }
+
+    private void replaceFileDocuments(Scheme scheme, JsonNode item) {
+        documentRepository.deleteBySchemeId(scheme.getId());
+        JsonNode raw = item.get("documents_raw");
+        if (raw == null || !raw.isArray()) {
+            return;
+        }
+        int pos = 0;
+        for (JsonNode block : raw) {
+            for (String line : slateParagraphTexts(block)) {
+                String name = cleanDocumentLine(line);
+                if (name == null) {
+                    continue;
+                }
+                SchemeDocument row = new SchemeDocument();
+                row.setSchemeId(scheme.getId());
+                row.setName(name);
+                row.setRequired(true);
+                row.setLanguage("en");
+                row.setPosition(pos++);
+                documentRepository.save(row);
+            }
+        }
+    }
+
+    /**
+     * Flattens one Slate paragraph block into its text lines. Headings
+     * (lines ending with ':') and over-long prose are skipped — they are
+     * display text, not document names; the full markdown stays queryable
+     * in {@code documents_md} and the raw payload.
+     */
+    private List<String> slateParagraphTexts(JsonNode block) {
+        List<String> lines = new ArrayList<>();
+        if (block == null || !block.isObject()) {
+            return lines;
+        }
+        if (!"paragraph".equals(text(block, "type"))) {
+            return lines;
+        }
+        JsonNode children = block.get("children");
+        if (children == null || !children.isArray()) {
+            return lines;
+        }
+        StringBuilder current = new StringBuilder();
+        for (JsonNode child : children) {
+            String text = text(child, "text");
+            if (text != null) {
+                current.append(text);
+            }
+        }
+        for (String line : current.toString().split("\\r?\\n")) {
+            String trimmed = line.trim();
+            if (!trimmed.isEmpty()) {
+                lines.add(trimmed);
+            }
+        }
+        return lines;
+    }
+
+    private String cleanDocumentLine(String line) {
+        String cleaned = line.replaceAll("^[\\s\\-•*·]+", "")
+            .replaceAll("^[a-zA-Z0-9]+[.\\)]\\s+", "")
+            .trim();
+        if (cleaned.isEmpty() || cleaned.endsWith(":") || cleaned.length() > 200) {
+            return null;
+        }
+        return cleaned;
+    }
+
+    private void replaceFileReferences(Scheme scheme, JsonNode item) {
+        referenceRepository.deleteBySchemeId(scheme.getId());
+        JsonNode list = item.get("references");
+        if (list == null || !list.isArray()) {
+            return;
+        }
+        int pos = 0;
+        for (JsonNode ref : list) {
+            String title = firstText(ref, "title", "name");
+            String url = firstText(ref, "url", "link");
+            if (title == null || title.isBlank() || url == null || url.isBlank()) {
+                continue;
+            }
+            SchemeReference row = new SchemeReference();
+            row.setSchemeId(scheme.getId());
+            row.setTitle(title.trim());
+            row.setUrl(url.trim());
+            row.setPosition(pos++);
+            referenceRepository.save(row);
+        }
+    }
+
+    private void replaceFileSteps(Scheme scheme, JsonNode item) {
+        stepRepository.deleteBySchemeId(scheme.getId());
+        JsonNode list = item.get("applicationProcess");
+        if (list == null || !list.isArray()) {
+            return;
+        }
+        int stepNo = 1;
+        for (JsonNode channel : list) {
+            String mode = firstText(channel, "mode");
+            String prefix = mode != null && !mode.isBlank() ? "[" + mode.trim() + "] " : "";
+            String processMd = firstText(channel, "process_md", "process", "description");
+            if (processMd == null || processMd.isBlank()) {
+                continue;
+            }
+            for (String line : processMd.split("\\r?\\n")) {
+                String cleaned = line.replaceAll("^[\\d.\\)\\-\\s*]+", "")
+                    .replaceAll("^\\*\\*Step \\d+:\\*\\*\\s*", "")
+                    .replaceAll("^Step \\d+:\\s*", "")
+                    .trim();
+                if (cleaned.isEmpty()) {
+                    continue;
+                }
+                SchemeApplicationStep step = new SchemeApplicationStep();
+                step.setSchemeId(scheme.getId());
+                step.setStepNo(stepNo++);
+                step.setDescription(prefix + cleaned);
+                step.setLanguage("en");
+                stepRepository.save(step);
+            }
+        }
     }
 
     private void replaceTags(Scheme scheme, JsonNode detail, String lang) {

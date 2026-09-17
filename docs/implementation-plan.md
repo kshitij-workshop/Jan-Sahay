@@ -119,6 +119,10 @@
   raw JSON is always preserved. Search/detail parsers tolerate envelope variants.
 - Upserts are idempotent by slug (reruns count as updates); resume = rerun from offset.
 - Tests pin the stub client so shell env can never flip tests onto the live API.
+- Offline dump import (`POST /api/admin/schemes/import`, `data/schemes.json`):
+  V5 columns/tables, idempotent by slug, verified live against MySQL —
+  823/823 imported with 0 failures (9892 FAQs, 11179 steps, 4088 tags),
+  rerun yields 823 updates and 0 duplicates.
 
 ---
 

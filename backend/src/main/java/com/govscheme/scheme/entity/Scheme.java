@@ -65,6 +65,39 @@ public class Scheme {
     @Column(name = "priority")
     private Integer priority;
 
+    @Column(name = "eligibility_md", columnDefinition = "TEXT")
+    private String eligibilityMd;
+
+    @Column(name = "benefits_md", columnDefinition = "TEXT")
+    private String benefitsMd;
+
+    @Column(name = "exclusions_md", columnDefinition = "TEXT")
+    private String exclusionsMd;
+
+    @Column(name = "detailed_description_md", columnDefinition = "TEXT")
+    private String detailedDescriptionMd;
+
+    @Column(name = "documents_md", columnDefinition = "TEXT")
+    private String documentsMd;
+
+    @Column(name = "benefit_type", length = 100)
+    private String benefitType;
+
+    @Column(name = "scheme_type", length = 255)
+    private String schemeType;
+
+    @Column(name = "department", length = 255)
+    private String department;
+
+    @Column(name = "open_date", length = 50)
+    private String openDate;
+
+    @Column(name = "image_url", length = 1000)
+    private String imageUrl;
+
+    @Column(name = "external_id", length = 100)
+    private String externalId;
+
     @Column(name = "source", nullable = false, length = 50)
     private String source = "MYSCHEME";
 
@@ -123,6 +156,39 @@ public class Scheme {
 
     public Integer getPriority() { return priority; }
     public void setPriority(Integer priority) { this.priority = priority; }
+
+    public String getEligibilityMd() { return eligibilityMd; }
+    public void setEligibilityMd(String eligibilityMd) { this.eligibilityMd = eligibilityMd; }
+
+    public String getBenefitsMd() { return benefitsMd; }
+    public void setBenefitsMd(String benefitsMd) { this.benefitsMd = benefitsMd; }
+
+    public String getExclusionsMd() { return exclusionsMd; }
+    public void setExclusionsMd(String exclusionsMd) { this.exclusionsMd = exclusionsMd; }
+
+    public String getDetailedDescriptionMd() { return detailedDescriptionMd; }
+    public void setDetailedDescriptionMd(String detailedDescriptionMd) { this.detailedDescriptionMd = detailedDescriptionMd; }
+
+    public String getDocumentsMd() { return documentsMd; }
+    public void setDocumentsMd(String documentsMd) { this.documentsMd = documentsMd; }
+
+    public String getBenefitType() { return benefitType; }
+    public void setBenefitType(String benefitType) { this.benefitType = benefitType; }
+
+    public String getSchemeType() { return schemeType; }
+    public void setSchemeType(String schemeType) { this.schemeType = schemeType; }
+
+    public String getDepartment() { return department; }
+    public void setDepartment(String department) { this.department = department; }
+
+    public String getOpenDate() { return openDate; }
+    public void setOpenDate(String openDate) { this.openDate = openDate; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public String getExternalId() { return externalId; }
+    public void setExternalId(String externalId) { this.externalId = externalId; }
 
     public String getSource() { return source; }
     public void setSource(String source) { this.source = source; }
