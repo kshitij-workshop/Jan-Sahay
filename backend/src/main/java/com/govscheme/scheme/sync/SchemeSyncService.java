@@ -5,6 +5,7 @@ import com.govscheme.scheme.client.MySchemeException;
 import com.govscheme.scheme.client.MySchemeProperties;
 import com.govscheme.scheme.entity.SyncError;
 import com.govscheme.scheme.entity.SyncErrorRepository;
+import com.govscheme.matching.service.MatchingService;
 import com.govscheme.scheme.entity.SyncJob;
 import com.govscheme.scheme.entity.SyncJobRepository;
 import org.slf4j.Logger;
@@ -33,17 +34,20 @@ public class SchemeSyncService {
     private final MySchemeClient client;
     private final MySchemeProperties properties;
     private final SchemeUpsertService upsertService;
+    private final MatchingService matchingService;
     private final SyncJobRepository jobRepository;
     private final SyncErrorRepository errorRepository;
 
     public SchemeSyncService(MySchemeClient client,
                              MySchemeProperties properties,
                              SchemeUpsertService upsertService,
+                             MatchingService matchingService,
                              SyncJobRepository jobRepository,
                              SyncErrorRepository errorRepository) {
         this.client = client;
         this.properties = properties;
         this.upsertService = upsertService;
+        this.matchingService = matchingService;
         this.jobRepository = jobRepository;
         this.errorRepository = errorRepository;
     }
@@ -142,6 +146,11 @@ public class SchemeSyncService {
         job = jobRepository.save(job);
         log.info("SCHEME_SYNC_COMPLETED jobId={} status={} fetched={} created={} updated={} failed={}",
             job.getId(), job.getStatus(), job.getFetched(), created, updated, failed);
+        try {
+            matchingService.recalculateSchemesSyncedSince(job.getStartedAt());
+        } catch (Exception e) {
+            log.warn("MATCHING_RECALC_FAILED jobId={} message={}", job.getId(), e.getMessage());
+        }
         return job;
     }
 

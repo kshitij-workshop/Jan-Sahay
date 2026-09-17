@@ -3,6 +3,7 @@ package com.govscheme.profile.service;
 import com.govscheme.auth.entity.UserRepository;
 import com.govscheme.common.exception.ResourceNotFoundException;
 import com.govscheme.common.exception.ValidationException;
+import com.govscheme.matching.service.MatchingService;
 import com.govscheme.profile.dto.AddressRequest;
 import com.govscheme.profile.dto.AddressResponse;
 import com.govscheme.profile.dto.ProfileCompleteness;
@@ -40,13 +41,16 @@ public class ProfileService {
     private final UserProfileRepository profileRepository;
     private final UserAddressRepository addressRepository;
     private final UserRepository userRepository;
+    private final MatchingService matchingService;
 
     public ProfileService(UserProfileRepository profileRepository,
                           UserAddressRepository addressRepository,
-                          UserRepository userRepository) {
+                          UserRepository userRepository,
+                          MatchingService matchingService) {
         this.profileRepository = profileRepository;
         this.addressRepository = addressRepository;
         this.userRepository = userRepository;
+        this.matchingService = matchingService;
     }
 
     @Transactional
@@ -72,6 +76,13 @@ public class ProfileService {
 
         profileRepository.save(profile);
         log.info("PROFILE_UPDATED userId={}", userId);
+        try {
+            matchingService.recalculateForUser(userId);
+        } catch (Exception e) {
+            // Matching must never fail a profile save; the error is logged
+            // and the next profile write or sync retries the recalculation.
+            log.warn("MATCHING_RECALC_FAILED userId={} message={}", userId, e.getMessage());
+        }
         return toResponse(profile, addresses);
     }
 
