@@ -64,10 +64,12 @@ public class MatchingService {
 
     @Transactional
     public void recalculateForUser(String userId) {
+        UserProfile profile = loadProfile(userId);
+        List<UserAddress> addresses = addressRepository.findByUserId(userId);
         List<Scheme> schemes = schemeRepository.findAll();
         int changed = 0;
         for (Scheme scheme : schemes) {
-            if (evaluateAndStore(userId, scheme)) {
+            if (evaluateAndStore(userId, profile, addresses, scheme)) {
                 changed++;
             }
         }
@@ -105,14 +107,22 @@ public class MatchingService {
         }
     }
 
-    private boolean evaluateAndStore(String userId, Scheme scheme) {
-        UserProfile profile = profileRepository.findById(userId).orElseGet(() -> {
+    private UserProfile loadProfile(String userId) {
+        return profileRepository.findById(userId).orElseGet(() -> {
             UserProfile fresh = new UserProfile();
             fresh.setUserId(userId);
             fresh.setNationality("Indian");
             return fresh;
         });
-        List<UserAddress> addresses = addressRepository.findByUserId(userId);
+    }
+
+    private boolean evaluateAndStore(String userId, Scheme scheme) {
+        return evaluateAndStore(userId, loadProfile(userId),
+            addressRepository.findByUserId(userId), scheme);
+    }
+
+    private boolean evaluateAndStore(String userId, UserProfile profile,
+                                     List<UserAddress> addresses, Scheme scheme) {
         UserAddress primary = addresses.stream()
             .filter(a -> Boolean.TRUE.equals(a.getPrimary()))
             .findFirst()
