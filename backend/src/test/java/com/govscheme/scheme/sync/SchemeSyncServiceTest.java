@@ -1,6 +1,7 @@
 package com.govscheme.scheme.sync;
 
 import com.govscheme.auth.TestMailConfig;
+import com.govscheme.matching.service.MatchingService;
 import com.govscheme.scheme.client.MySchemeClient;
 import com.govscheme.scheme.client.MySchemeException;
 import com.govscheme.scheme.client.MySchemeProperties;
@@ -32,6 +33,9 @@ class SchemeSyncServiceTest {
 
     @Autowired
     private SchemeUpsertService upsertService;
+
+    @Autowired
+    private MatchingService matchingService;
 
     @Autowired
     private SchemeRepository schemeRepository;
@@ -77,7 +81,7 @@ class SchemeSyncServiceTest {
         MySchemeProperties properties = new MySchemeProperties();
         properties.setMaxSyncSchemes(maxSync);
         properties.setDetailConcurrency(2);
-        return new SchemeSyncService(client, properties, upsertService, jobRepository, errorRepository);
+        return new SchemeSyncService(client, properties, upsertService, matchingService, jobRepository, errorRepository);
     }
 
     @Test
