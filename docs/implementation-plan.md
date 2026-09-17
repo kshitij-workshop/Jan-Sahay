@@ -69,19 +69,28 @@
 
 ---
 
-## Phase 3: User Profile
+## Phase 3: User Profile (COMPLETED)
 **Goal**: Complete citizen profile management
 
 ### Backend
-- [ ] Profile entities: UserProfile, UserAddress, Education, Economic, Social, Employment, Family
-- [ ] ProfileController: GET/PUT /api/profile
-- [ ] Validation (Bean Validation)
-- [ ] Profile completeness calculation
+- [x] Profile entities: UserProfile (1-1 with users, shared PK), UserAddress (1-N)
+- [x] ProfileController: GET/PUT /api/profile (principal-scoped, cross-user access impossible)
+- [x] Validation (Bean Validation: past DOB, pincode pattern, income/dependents/disability ranges)
+- [x] Profile completeness calculation (section-weighted %, dot-path missingFields)
 
 ### Frontend
-- [ ] Profile page with sections
-- [ ] Form validation
-- [ ] Progress indicator
+- [x] Profile page with sections (API-driven, server completeness per section)
+- [x] Form validation (client hints + server error details)
+- [x] Progress indicator (overall bar + per-section %, missing-fields banner)
+
+**Decisions**:
+- Enums stored as VARCHAR (never MySQL ENUM) so new categories need no DDL.
+- Wrapper types throughout: `null` = unknown, feeding future INSUFFICIENT_INFORMATION.
+- `additional_attributes JSON` escape hatch for future scheme criteria without schema rewrites.
+- PUT merges scalars on non-null; a present `addresses` list replaces the stored set
+  (exactly one primary enforced server-side).
+- Malformed values → 400; absent values → completeness `missingFields`, never errors.
+- `PROFILE_UPDATED` structured log carries only the opaque user id, no PII.
 
 ---
 
@@ -293,6 +302,7 @@
 | 0 - Analysis | ✅ Complete |
 | 1 - Foundation | ✅ Complete |
 | 2 - Auth | ✅ Complete |
+| 3 - Profile | ✅ Complete |
 | 3 - Profile | ⬜ Pending |
 | 4 - MyScheme Sync | ⬜ Pending |
 | 5 - Scheme Browse | ⬜ Pending |
