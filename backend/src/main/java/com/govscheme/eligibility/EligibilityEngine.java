@@ -27,17 +27,24 @@ public class EligibilityEngine {
         List<RuleResult> results = new ArrayList<>();
         List<String> missing = new ArrayList<>();
         boolean failed = false;
+        int evaluated = 0;
         for (EligibilityRule rule : rules) {
             RuleResult result = rule.evaluate(context);
             results.add(result);
+            if (result.getStatus() == RuleResult.Status.SKIP) {
+                continue;
+            }
+            evaluated++;
             if (result.getStatus() == RuleResult.Status.FAIL) {
                 failed = true;
             } else if (result.getStatus() == RuleResult.Status.MISSING && result.getMissingField() != null) {
                 missing.add(result.getMissingField());
             }
         }
+        // No evaluated rules means the scheme publishes no machine-readable
+        // constraints. That is unknown eligibility — never a pass.
         EligibilityStatus status = failed ? EligibilityStatus.NOT_ELIGIBLE
-            : !missing.isEmpty() ? EligibilityStatus.INSUFFICIENT_INFORMATION
+            : evaluated == 0 || !missing.isEmpty() ? EligibilityStatus.INSUFFICIENT_INFORMATION
             : EligibilityStatus.ELIGIBLE;
         return new EligibilityResult(status, results, missing);
     }

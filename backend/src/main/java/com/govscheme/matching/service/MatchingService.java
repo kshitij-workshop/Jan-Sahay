@@ -162,7 +162,7 @@ public class MatchingService {
             .filter(r -> r.getStatus() != RuleResult.Status.SKIP)
             .toList();
         if (evaluated.isEmpty()) {
-            return "No machine-readable constraints published for this scheme.";
+            return "Eligibility criteria are being curated for this scheme.";
         }
         if (result.getStatus() == EligibilityStatus.NOT_ELIGIBLE) {
             return "Failed: " + evaluated.stream()

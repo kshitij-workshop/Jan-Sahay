@@ -160,16 +160,16 @@ class MatchesControllerTests {
                 .content(objectMapper.writeValueAsString(Map.of("fullName", "Filter User"))))
             .andExpect(status().isOk());
 
-        // Unconstrained scheme with no disqualifiers: ELIGIBLE (reason states
-        // no machine-readable constraints were published).
+        // Unconstrained scheme: INSUFFICIENT_INFORMATION (criteria pending
+        // curation is unknown eligibility, never a pass).
         mockMvc.perform(get("/api/matches")
-                .param("status", "ELIGIBLE")
+                .param("status", "INSUFFICIENT_INFORMATION")
                 .header("Authorization", "Bearer " + token))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.length()").value(1));
 
         mockMvc.perform(get("/api/matches")
-                .param("status", "NOT_ELIGIBLE")
+                .param("status", "ELIGIBLE")
                 .header("Authorization", "Bearer " + token))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.length()").value(0));

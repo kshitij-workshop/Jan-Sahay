@@ -6,8 +6,9 @@ import java.util.List;
 
 /**
  * Deterministic outcome. Any FAIL dominates; otherwise any MISSING yields
- * INSUFFICIENT_INFORMATION with the exact absent fields. Only all-PASS
- * (ignoring SKIP) is ELIGIBLE.
+ * INSUFFICIENT_INFORMATION with the exact absent fields. Zero evaluated rules
+ * (nothing curated) is also INSUFFICIENT_INFORMATION — unknown is never a
+ * pass. Only all-PASS with at least one evaluated rule is ELIGIBLE.
  */
 public class EligibilityResult {
 
