@@ -32,29 +32,29 @@ public class UserAddress {
     private String userId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "address_type", nullable = false, length = 20)
+    @Column(name = "address_type", nullable = false, length = 20, columnDefinition = "VARCHAR(20)")
     private AddressType addressType = AddressType.PERMANENT;
 
     @Column(name = "is_primary", nullable = false)
     private Boolean primary = false;
 
-    @Column(name = "state", length = 100)
+    @Column(name = "state", length = 100, columnDefinition = "VARCHAR(100)")
     private String state;
 
-    @Column(name = "district", length = 100)
+    @Column(name = "district", length = 100, columnDefinition = "VARCHAR(100)")
     private String district;
 
-    @Column(name = "block", length = 100)
+    @Column(name = "block", length = 100, columnDefinition = "VARCHAR(100)")
     private String block;
 
-    @Column(name = "village_town", length = 255)
+    @Column(name = "village_town", length = 255, columnDefinition = "VARCHAR(255)")
     private String villageTown;
 
-    @Column(name = "pincode", length = 10)
+    @Column(name = "pincode", length = 10, columnDefinition = "VARCHAR(10)")
     private String pincode;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "area_type", length = 20)
+    @Column(name = "area_type", length = 20, columnDefinition = "VARCHAR(20)")
     private AreaType areaType;
 
     @CreationTimestamp

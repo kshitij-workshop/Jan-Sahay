@@ -19,7 +19,7 @@
 - [x] Global exception handler
 - [x] Docker Compose with MySQL
 
-### Frontend Setup
+### Frontend Setup  
 - [x] React + Vite + TypeScript
 - [x] React Router, Axios
 - [x] Basic layout with header, sidebar

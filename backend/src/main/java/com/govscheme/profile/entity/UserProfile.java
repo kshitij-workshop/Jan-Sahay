@@ -32,37 +32,37 @@ public class UserProfile {
     @Column(name = "user_id", updatable = false, nullable = false, columnDefinition = "CHAR(36)")
     private String userId;
 
-    @Column(name = "full_name", length = 255)
+    @Column(name = "full_name", length = 255, columnDefinition = "VARCHAR(255)")
     private String fullName;
 
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "gender", length = 20)
+    @Column(name = "gender", length = 20, columnDefinition = "VARCHAR(20)")
     private Gender gender;
 
-    @Column(name = "nationality", length = 100)
+    @Column(name = "nationality", length = 100, columnDefinition = "VARCHAR(100)")
     private String nationality = "Indian";
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "education_level", length = 40)
+    @Column(name = "education_level", length = 40, columnDefinition = "VARCHAR(40)")
     private EducationLevel educationLevel;
 
-    @Column(name = "institution", length = 255)
+    @Column(name = "institution", length = 255, columnDefinition = "VARCHAR(255)")
     private String institution;
 
     @Column(name = "student_status")
     private Boolean studentStatus;
 
-    @Column(name = "course", length = 255)
+    @Column(name = "course", length = 255, columnDefinition = "VARCHAR(255)")
     private String course;
 
     @Column(name = "annual_income")
     private Long annualIncome;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "income_category", length = 40)
+    @Column(name = "income_category", length = 40, columnDefinition = "VARCHAR(40)")
     private IncomeCategory incomeCategory;
 
     @Column(name = "bpl_status")
@@ -72,7 +72,7 @@ public class UserProfile {
     private Boolean economicDistress;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "caste_category", length = 20)
+    @Column(name = "caste_category", length = 20, columnDefinition = "VARCHAR(20)")
     private CasteCategory casteCategory;
 
     @Column(name = "minority_status")
@@ -85,18 +85,18 @@ public class UserProfile {
     private Integer disabilityPercentage;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "occupation", length = 40)
+    @Column(name = "occupation", length = 40, columnDefinition = "VARCHAR(40)")
     private Occupation occupation;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "employment_status", length = 40)
+    @Column(name = "employment_status", length = 40, columnDefinition = "VARCHAR(40)")
     private EmploymentStatus employmentStatus;
 
     @Column(name = "govt_employee")
     private Boolean govtEmployee;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "marital_status", length = 20)
+    @Column(name = "marital_status", length = 20, columnDefinition = "VARCHAR(20)")
     private MaritalStatus maritalStatus;
 
     @Column(name = "dependents")
