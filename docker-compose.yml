@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: gov-scheme-mysql
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-gov_scheme_assistant}
+      MYSQL_USER: ${MYSQL_USERNAME:-gov_scheme_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - gov-scheme-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gov-scheme-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-gov_scheme_assistant}
+      MYSQL_USERNAME: ${MYSQL_USERNAME:-gov_scheme_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_TOKEN_EXPIRY_MS: ${JWT_ACCESS_TOKEN_EXPIRY_MS:-900000}
+      JWT_REFRESH_TOKEN_EXPIRY_MS: ${JWT_REFRESH_TOKEN_EXPIRY_MS:-604800000}
+      MYSCHEME_API_KEY: ${MYSCHEME_API_KEY}
+      MYSCHEME_BASE_URL: ${MYSCHEME_BASE_URL:-https://api.myscheme.gov.in}
+      SPRING_AI_PROVIDER: ${SPRING_AI_PROVIDER:-openai}
+      SPRING_AI_OPENAI_API_KEY: ${SPRING_AI_OPENAI_API_KEY}
+      SPRING_AI_OPENAI_MODEL: ${SPRING_AI_OPENAI_MODEL:-gpt-4o-mini}
+      SPRING_AI_OPENAI_BASE_URL: ${SPRING_AI_OPENAI_BASE_URL:-https://api.openai.com/v1}
+      WHATSAPP_ACCESS_TOKEN: ${WHATSAPP_ACCESS_TOKEN}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID}
+      WHATSAPP_BUSINESS_ACCOUNT_ID: ${WHATSAPP_BUSINESS_ACCOUNT_ID}
+      WHATSAPP_WEBHOOK_VERIFY_TOKEN: ${WHATSAPP_WEBHOOK_VERIFY_TOKEN}
+      DOCUMENT_STORAGE_TYPE: ${DOCUMENT_STORAGE_TYPE:-local}
+      LOCAL_STORAGE_PATH: ${LOCAL_STORAGE_PATH:-/app/uploads}
+      MAX_SYNC_SCHEMES: ${MAX_SYNC_SCHEMES:-50}
+      USE_MOCK_OCR: ${USE_MOCK_OCR:-true}
+      USE_MOCK_WHATSAPP: ${USE_MOCK_WHATSAPP:-true}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      SERVER_PORT: ${SERVER_PORT:-8080}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./backend/uploads:/app/uploads
+    networks:
+      - gov-scheme-network
+    profiles:
+      - dev
+      - prod
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: gov-scheme-frontend
+    environment:
+      VITE_API_BASE_URL: http://localhost:8080/api
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - gov-scheme-network
+    profiles:
+      - dev
+
+  # Production frontend (nginx) - uncomment for prod
+  # frontend-prod:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile.prod
+  #   container_name: gov-scheme-frontend-prod
+  #   ports:
+  #     - "80:80"
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - gov-scheme-network
+  #   profiles:
+  #     - prod
+
+volumes:
+  mysql_data:
+
+networks:
+  gov-scheme-network:
+    driver: bridge

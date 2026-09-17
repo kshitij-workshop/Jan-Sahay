@@ -1,0 +1,214 @@
+spring:
+  application:
+    name: government-scheme-assistant
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:gov_scheme_assistant}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${MYSQL_USERNAME:gov_scheme_user}
+    password: ${MYSQL_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      leak-detection-threshold: 60000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+        use_sql_comments: true
+        jdbc:
+          time_zone: UTC
+        generate_statistics: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    validate-on-migrate: true
+    locations: classpath:db/migration
+    encoding: UTF-8
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api
+  error:
+    include-message: always
+    include-binding-errors: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+    health:
+      show-details: always
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  level:
+    root: ${LOG_LEVEL:INFO}
+    com.govscheme: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    access-token-expiry-ms: ${JWT_ACCESS_TOKEN_EXPIRY_MS:900000}
+    refresh-token-expiry-ms: ${JWT_REFRESH_TOKEN_EXPIRY_MS:604800000}
+    issuer: gov-scheme-assistant
+
+  myscheme:
+    api-key: ${MYSCHEME_API_KEY}
+    base-url: ${MYSCHEME_BASE_URL:https://api.myscheme.gov.in}
+    connect-timeout-ms: 10000
+    read-timeout-ms: 30000
+    max-sync-schemes: ${MAX_SYNC_SCHEMES:50}
+
+  ai:
+    provider: ${SPRING_AI_PROVIDER:openai}
+    openai:
+      api-key: ${SPRING_AI_OPENAI_API_KEY}
+      model: ${SPRING_AI_OPENAI_MODEL:gpt-4o-mini}
+      base-url: ${SPRING_AI_OPENAI_BASE_URL:https://api.openai.com/v1}
+    ollama:
+      base-url: ${SPRING_AI_OLLAMA_BASE_URL:http://localhost:11434}
+      model: ${SPRING_AI_OLLAMA_MODEL:llama3.1}
+
+  whatsapp:
+    access-token: ${WHATSAPP_ACCESS_TOKEN}
+    phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID}
+    business-account-id: ${WHATSAPP_BUSINESS_ACCOUNT_ID}
+    webhook-verify-token: ${WHATSAPP_WEBHOOK_VERIFY_TOKEN}
+
+  document:
+    storage-type: ${DOCUMENT_STORAGE_TYPE:local}
+    local:
+      path: ${LOCAL_STORAGE_PATH:./uploads}
+    s3:
+      endpoint: ${S3_ENDPOINT:}
+      region: ${S3_REGION:us-east-1}
+      bucket: ${S3_BUCKET:}
+      access-key: ${S3_ACCESS_KEY:}
+      secret-key: ${S3_SECRET_KEY:}
+
+  mock:
+    ocr: ${USE_MOCK_OCR:true}
+    whatsapp: ${USE_MOCK_WHATSAPP:true}
+
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:5173}
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    clean-disabled: false
+
+  main:
+    allow-circular-references: true
+
+logging:
+  level:
+    com.govscheme: DEBUG
+    org.springframework.web: DEBUG
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  jpa:
+    show-sql: false
+
+  flyway:
+    clean-disabled: true
+
+logging:
+  level:
+    root: WARN
+    com.govscheme: INFO
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: test
+
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+  flyway:
+    enabled: false
+
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration
+      - org.springframework.ai.autoconfigure.ollama.OllamaAutoConfiguration
+
+app:
+  jwt:
+    secret: dGVzdC1zZWNyZXQta2V5LWZvci10ZXN0aW5nLXB1cnBvc2VzLW9ubHktbXVzdC1iZS02NC1jaGFycy1sb25n
+
+logging:
+  level:
+    root: WARN
+    com.govscheme: DEBUG

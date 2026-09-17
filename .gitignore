@@ -1,0 +1,42 @@
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build outputs
+backend/target/
+frontend/dist/
+frontend/node_modules/
+*.log
+
+# Database
+*.sql
+*.db
+
+# Uploads
+uploads/
+backend/uploads/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Test reports
+backend/target/surefire-reports/
+frontend/coverage/
+
+# Maven
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# Temporary
+*.tmp
+*.temp
