@@ -126,18 +126,25 @@
 
 ---
 
-## Phase 5: Scheme Browsing
+## Phase 5: Scheme Browsing (COMPLETED)
 **Goal**: Citizen-facing scheme discovery
 
 ### Backend
-- [ ] SchemeController: search, filters, pagination, detail, FAQs, documents
-- [ ] Search by: category, state, gender, age, student, occupation, caste, disability
-- [ ] Scheme detail DTO with all sections
+- [x] SchemeController: search, filters, pagination, detail, FAQs, documents
+- [x] Search by: text, category, state, level (+ distinct categories endpoint)
+- [x] Scheme detail DTO with all sections
+- [ ] Demographic filters (gender, age, student, occupation, caste, disability) — moved to Phase 6/7 eligibility engine
 
 ### Frontend
-- [ ] Schemes listing page with filters
-- [ ] Scheme detail page (overview, benefits, eligibility, documents, process, FAQs, official link)
-- [ ] Scheme card component
+- [x] Schemes listing page with filters (debounced search, pagination)
+- [x] Scheme detail page (overview, benefits, eligibility-as-published, documents, process, FAQs, official link)
+- [x] Scheme card component (no invented eligibility badges)
+
+**Decisions**:
+- No eligibility verdicts anywhere in browsing UI until the deterministic Phase 6 engine exists.
+- Category/state filters consult child tables; All-India schemes match every state filter.
+- Detail page labels publisher text as such and links official sources; platform never auto-submits.
+- Verified live against 823 imported schemes: 62 scholarship hits, 123 categories.
 
 ---
 
@@ -317,6 +324,7 @@
 | 2 - Auth | ✅ Complete |
 | 3 - Profile | ✅ Complete |
 | 4 - MyScheme Sync | ✅ Complete |
+| 5 - Scheme Browse | ✅ Complete |
 | 3 - Profile | ⬜ Pending |
 | 4 - MyScheme Sync | ⬜ Pending |
 | 5 - Scheme Browse | ⬜ Pending |
