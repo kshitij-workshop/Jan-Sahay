@@ -4,6 +4,7 @@ import com.govscheme.admin.dto.SyncErrorResponse;
 import com.govscheme.admin.dto.SyncJobResponse;
 import com.govscheme.common.dto.ApiResponse;
 import com.govscheme.common.dto.PageResponse;
+import com.govscheme.eligibility.service.CriteriaBootstrapService;
 import com.govscheme.scheme.entity.SyncErrorRepository;
 import com.govscheme.scheme.entity.SyncJob;
 import com.govscheme.scheme.entity.SyncJobRepository;
@@ -35,15 +36,18 @@ public class AdminController {
 
     private final SchemeSyncService syncService;
     private final SchemeFileImportService fileImportService;
+    private final CriteriaBootstrapService bootstrapService;
     private final SyncJobRepository jobRepository;
     private final SyncErrorRepository errorRepository;
 
     public AdminController(SchemeSyncService syncService,
                            SchemeFileImportService fileImportService,
+                           CriteriaBootstrapService bootstrapService,
                            SyncJobRepository jobRepository,
                            SyncErrorRepository errorRepository) {
         this.syncService = syncService;
         this.fileImportService = fileImportService;
+        this.bootstrapService = bootstrapService;
         this.jobRepository = jobRepository;
         this.errorRepository = errorRepository;
     }
@@ -73,6 +77,19 @@ public class AdminController {
     public ResponseEntity<ApiResponse<SyncJobResponse>> importSchemes() {
         SyncJob job = fileImportService.importFile();
         return ResponseEntity.ok(ApiResponse.success(SyncJobResponse.from(job), "Import finished"));
+    }
+
+    @PostMapping("/schemes/criteria/bootstrap")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> bootstrapCriteria() {
+        CriteriaBootstrapService.BootstrapSummary summary = bootstrapService.bootstrap();
+        Map<String, Object> data = Map.of(
+            "scanned", summary.scanned(),
+            "curated", summary.curated(),
+            "alreadyCurated", summary.alreadyCurated(),
+            "skipped", summary.skipped()
+        );
+        return ResponseEntity.ok(ApiResponse.success(data, "Criteria bootstrap finished"));
     }
 
     @GetMapping("/sync/jobs")
