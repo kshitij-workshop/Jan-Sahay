@@ -11,6 +11,8 @@ import com.govscheme.profile.entity.UserAddress;
 import com.govscheme.profile.entity.UserProfile;
 import com.govscheme.matching.entity.UserSchemeMatchRepository;
 import com.govscheme.scheme.entity.Scheme;
+import com.govscheme.scheme.entity.SchemeRawData;
+import com.govscheme.scheme.entity.SchemeRawDataRepository;
 import com.govscheme.scheme.entity.SchemeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,6 +52,9 @@ class CriteriaBootstrapTests {
 
     @Autowired
     private SchemeEligibilityRepository eligibilityRepository;
+
+    @Autowired
+    private SchemeRawDataRepository rawDataRepository;
 
     @Autowired
     private UserSchemeMatchRepository matchRepository;
@@ -103,6 +108,35 @@ class CriteriaBootstrapTests {
         // Existing curated rows are never overwritten.
         assertThat(eligibilityRepository.findById(curatedSchemeId).orElseThrow().getStates())
             .isEqualTo("Bihar,Uttar Pradesh");
+    }
+
+    @Test
+    void extractionFillsCriteriaFromRawPayload() {
+        String slug = "extracted-" + UUID.randomUUID();
+        Scheme scheme = new Scheme();
+        scheme.setSlug(slug);
+        scheme.setSchemeName("Central Study Grant");
+        scheme.setSource("TEST");
+        schemeRepository.save(scheme);
+
+        SchemeRawData raw = new SchemeRawData();
+        raw.setSchemeId(scheme.getId());
+        raw.setSlug(slug);
+        raw.setKind("FILE");
+        raw.setPayload("{\"slug\":\"" + slug + "\",\"eligibility_md\":"
+            + "\"The applicant must be aged between 18 and 35 years. "
+            + "Annual family income should not exceed Rs. 2 lakh. "
+            + "The applicant must be a permanent resident of Bihar.\"}");
+        rawDataRepository.save(raw);
+
+        bootstrapService.bootstrap();
+
+        SchemeEligibility criteria =
+            eligibilityRepository.findById(scheme.getId()).orElseThrow();
+        assertThat(criteria.getMinAge()).isEqualTo(18);
+        assertThat(criteria.getMaxAge()).isEqualTo(35);
+        assertThat(criteria.getMaxAnnualIncome()).isEqualTo(200000L);
+        assertThat(criteria.getStates()).isEqualTo("Bihar");
     }
 
     @Test
