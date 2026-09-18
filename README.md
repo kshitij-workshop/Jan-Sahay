@@ -6,7 +6,7 @@ A citizen-first platform helping residents of Bihar/India discover government sc
 
 | Layer | Technology |
 |-------|------------|
-| Backend | Bun + TanStack Start, better-auth, Cloudflare Workers |
+| Backend | Bun + TanStack Start, better-auth, Cloudflare Workers, PaddleOCR |
 | Frontend | React 18, Vite, TypeScript, React Router, Axios |
 | Database | MySQL 8.0 with Flyway migrations |
 | AI | Local rule-engine grounding +  LLM chain openrouter Web Speech API hi-IN voice |
