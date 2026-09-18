@@ -6,9 +6,10 @@ A citizen-first platform helping residents of Bihar/India discover government sc
 
 | Layer | Technology |
 |-------|------------|
-| Backend | Java 21, Spring Boot 3.x, Spring Data JPA, Spring Security, Spring AI, MySQL, Maven |
+| Backend | Bun + TanStack Start, better-auth, Cloudflare Workers |
 | Frontend | React 18, Vite, TypeScript, React Router, Axios |
 | Database | MySQL 8.0 with Flyway migrations |
+| AI | Local rule-engine grounding +  LLM chain openrouter Web Speech API hi-IN voice |
 | Infrastructure | Docker Compose |
 
 ## Quick Start
