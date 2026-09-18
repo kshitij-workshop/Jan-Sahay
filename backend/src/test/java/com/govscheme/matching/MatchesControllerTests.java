@@ -3,6 +3,9 @@ package com.govscheme.matching;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.govscheme.auth.TestMailConfig;
+import com.govscheme.auth.entity.UserRepository;
+import com.govscheme.matching.entity.UserSchemeMatch;
+import com.govscheme.matching.entity.UserSchemeMatchRepository;
 import com.govscheme.scheme.entity.Scheme;
 import com.govscheme.scheme.entity.SchemeRepository;
 import com.govscheme.matching.entity.UserSchemeMatchRepository;
@@ -42,6 +45,9 @@ class MatchesControllerTests {
 
     @Autowired
     private SchemeRepository schemeRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private UserSchemeMatchRepository matchRepository;
@@ -208,6 +214,39 @@ class MatchesControllerTests {
             .andExpect(jsonPath("$.data.total").value(0));
 
         mockMvc.perform(get("/api/matches/summary"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void recalculateRefreshesStaleVerdicts() throws Exception {
+        String email = uniqueEmail("stale");
+        String token = registerAndLogin(email);
+        String userId = userRepository.findByEmail(email).orElseThrow().getId();
+
+        Scheme scheme = new Scheme();
+        scheme.setSlug("stale-" + UUID.randomUUID());
+        scheme.setSchemeName("Stale");
+        scheme.setSource("TEST");
+        schemeRepository.save(scheme);
+
+        // Simulates a row written before the honesty fix: ELIGIBLE with no
+        // evaluated rules. Recalculation must correct it.
+        UserSchemeMatch stale = new UserSchemeMatch();
+        stale.setUserId(userId);
+        stale.setSchemeId(scheme.getId());
+        stale.setStatus(UserSchemeMatch.Status.ELIGIBLE);
+        stale.setMatchReason("Passed everything (stale)");
+        stale.setLastCheckedAt(java.time.Instant.now().minusSeconds(3600));
+        matchRepository.save(stale);
+
+        mockMvc.perform(post("/api/matches/recalculate")
+                .header("Authorization", "Bearer " + token))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.total").value(1))
+            .andExpect(jsonPath("$.data.insufficientInformation").value(1))
+            .andExpect(jsonPath("$.data.eligible").value(0));
+
+        mockMvc.perform(post("/api/matches/recalculate"))
             .andExpect(status().isForbidden());
     }
 }
