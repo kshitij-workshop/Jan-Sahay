@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.govscheme.scheme.entity.SyncError;
 import com.govscheme.scheme.entity.SyncErrorRepository;
+import com.govscheme.matching.service.MatchingService;
 import com.govscheme.scheme.entity.SyncJob;
 import com.govscheme.scheme.entity.SyncJobRepository;
 import org.slf4j.Logger;
@@ -29,17 +30,20 @@ public class SchemeFileImportService {
     private static final Logger log = LoggerFactory.getLogger(SchemeFileImportService.class);
 
     private final SchemeUpsertService upsertService;
+    private final MatchingService matchingService;
     private final SyncJobRepository jobRepository;
     private final SyncErrorRepository errorRepository;
     private final ObjectMapper objectMapper;
     private final Path importFile;
 
     public SchemeFileImportService(SchemeUpsertService upsertService,
+                                   MatchingService matchingService,
                                    SyncJobRepository jobRepository,
                                    SyncErrorRepository errorRepository,
                                    ObjectMapper objectMapper,
                                    @Value("${app.import.file:data/schemes.json}") String importFile) {
         this.upsertService = upsertService;
+        this.matchingService = matchingService;
         this.jobRepository = jobRepository;
         this.errorRepository = errorRepository;
         this.objectMapper = objectMapper;
@@ -112,6 +116,11 @@ public class SchemeFileImportService {
         job = jobRepository.save(job);
         log.info("SCHEME_FILE_IMPORT_COMPLETED jobId={} status={} fetched={} created={} updated={} failed={}",
             job.getId(), job.getStatus(), items.size(), created, updated, failed);
+        try {
+            matchingService.recalculateSchemesSyncedSince(job.getStartedAt());
+        } catch (Exception e) {
+            log.warn("MATCHING_RECALC_FAILED jobId={} message={}", job.getId(), e.getMessage());
+        }
         return job;
     }
 

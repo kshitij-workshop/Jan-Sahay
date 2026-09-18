@@ -4,11 +4,11 @@ import { Sidebar } from '../components/common/Sidebar';
 import { Header } from '../components/common/Header';
 
 export const MainLayout: React.FC = () => (
-  <div className="min-h-screen bg-gray-50">
+  <div className="min-h-screen bg-gray-50 lg:flex lg:items-start">
     <Sidebar />
-    <div className="lg:pl-64">
+    <div className="flex-1 min-w-0">
       <Header />
-      <main className="p-4 md:p-6 lg:p-8">
+      <main className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full">
         <Outlet />
       </main>
     </div>

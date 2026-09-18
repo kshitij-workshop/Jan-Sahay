@@ -103,11 +103,11 @@ class EligibilityRuleTests {
     }
 
     @Test
-    void unconstrainedDimensionsSkip() {
+    void uncuratedSchemeIsInsufficientNeverEligible() {
         EligibilityResult outcome = engine.evaluate(ctx(profile(), address(), criteria()));
 
         assertThat(outcome.getRuleResults()).allMatch(r -> r.getStatus() == RuleResult.Status.SKIP);
-        assertThat(outcome.getStatus()).isEqualTo(EligibilityStatus.ELIGIBLE);
+        assertThat(outcome.getStatus()).isEqualTo(EligibilityStatus.INSUFFICIENT_INFORMATION);
         assertThat(outcome.getMissingFields()).isEmpty();
     }
 

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,6 +16,8 @@ public interface SchemeRepository extends JpaRepository<Scheme, String>, JpaSpec
 
     @Query("SELECT DISTINCT s.schemeCategory FROM Scheme s WHERE s.schemeCategory IS NOT NULL")
     List<String> findDistinctCategories();
+
+    List<Scheme> findByLastSyncedAtAfter(Instant since);
 
     Optional<Scheme> findBySlug(String slug);
 

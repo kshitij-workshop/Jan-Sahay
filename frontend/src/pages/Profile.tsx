@@ -54,6 +54,9 @@ const occupations = [
   { value: 'UNEMPLOYED', label: 'Unemployed' },
   { value: 'HOMEMAKER', label: 'Homemaker' },
   { value: 'RETIRED', label: 'Retired' },
+  { value: 'WEAVER', label: 'Weaver' },
+  { value: 'ARTISAN', label: 'Artisan' },
+  { value: 'FISHER', label: 'Fisher' },
 ];
 
 const employmentStatuses = [

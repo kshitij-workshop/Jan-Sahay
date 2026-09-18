@@ -2,6 +2,7 @@ package com.govscheme.scheme.sync;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.govscheme.auth.TestMailConfig;
+import com.govscheme.matching.service.MatchingService;
 import com.govscheme.scheme.entity.SchemeBeneficiaryRepository;
 import com.govscheme.scheme.entity.SchemeCategoryRepository;
 import com.govscheme.scheme.entity.SchemeDocumentRepository;
@@ -95,8 +96,11 @@ class SchemeFileImportServiceTest {
         schemeRepository.deleteAll();
     }
 
+    @Autowired
+    private MatchingService matchingService;
+
     private SchemeFileImportService service(Path file) {
-        return new SchemeFileImportService(upsertService, jobRepository, errorRepository,
+        return new SchemeFileImportService(upsertService, matchingService, jobRepository, errorRepository,
             objectMapper, file.toString());
     }
 

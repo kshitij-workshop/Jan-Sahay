@@ -48,7 +48,8 @@ export const Sidebar: React.FC = () => {
 
       <aside
         className={clsx(
-          'fixed lg:static inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200',
+          'fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200',
+          'lg:sticky lg:top-0 lg:h-screen lg:shrink-0',
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
         aria-label="Sidebar"
