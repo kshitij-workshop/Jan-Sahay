@@ -32,4 +32,9 @@ export const matchService = {
     const response = await api.get<{ data: MatchSummary }>('/matches/summary');
     return response.data.data;
   },
+
+  async recalculate(): Promise<MatchSummary> {
+    const response = await api.post<{ data: MatchSummary }>('/matches/recalculate');
+    return response.data.data;
+  },
 };

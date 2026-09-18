@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle, AlertCircle, AlertTriangle, ChevronRight } from 'lucide-react';
+import { CheckCircle, AlertCircle, AlertTriangle, ChevronRight, RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
@@ -25,36 +25,53 @@ export default function MyMatches() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = async (signal?: { cancelled: boolean }) => {
+    setLoading(true);
+    setError('');
+    try {
+      const [data, totals] = await Promise.all([
+        matchService.list(filter === 'ALL' ? undefined : filter),
+        matchService.summary(),
+      ]);
+      if (!signal?.cancelled) {
+        setMatches(data);
+        setSummary(totals);
+      }
+    } catch {
+      if (!signal?.cancelled) {
+        setError('Could not load your matches. Complete your profile first, then try again.');
+      }
+    } finally {
+      if (!signal?.cancelled) {
+        setLoading(false);
+      }
+    }
+  };
 
   useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const [data, totals] = await Promise.all([
-          matchService.list(filter === 'ALL' ? undefined : filter),
-          matchService.summary(),
-        ]);
-        if (!cancelled) {
-          setMatches(data);
-          setSummary(totals);
-        }
-      } catch {
-        if (!cancelled) {
-          setError('Could not load your matches. Complete your profile first, then try again.');
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    };
-    load();
+    const signal = { cancelled: false };
+    load(signal);
     return () => {
-      cancelled = true;
+      signal.cancelled = true;
     };
   }, [filter]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    setError('');
+    try {
+      const totals = await matchService.recalculate();
+      setSummary(totals);
+      const data = await matchService.list(filter === 'ALL' ? undefined : filter);
+      setMatches(data);
+    } catch {
+      setError('Could not refresh your matches. Please try again.');
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -63,7 +80,17 @@ export default function MyMatches() {
           <h1 className="text-2xl font-bold text-gray-900">My Scheme Matches</h1>
           <p className="text-gray-500 mt-1">Stored verdicts, recalculated whenever your profile changes</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            loading={refreshing}
+            disabled={refreshing}
+            className="gap-1"
+          >
+            <RefreshCw className="h-4 w-4" /> Refresh
+          </Button>
           {(['ALL', 'ELIGIBLE', 'INSUFFICIENT_INFORMATION', 'NOT_ELIGIBLE'] as Filter[]).map((f) => (
             <Button
               key={f}
