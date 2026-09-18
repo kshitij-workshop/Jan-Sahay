@@ -104,7 +104,7 @@ export default function MyMatches() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard label="Total Matches" value={summary.total} />
         <StatCard label="Eligible" value={summary.eligible} tone="text-green-600" />
         <StatCard label="Need Information" value={summary.insufficientInformation} tone="text-yellow-600" />
